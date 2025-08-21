@@ -10,13 +10,19 @@ const Personal = () => {
     const [data, setData] = useState([])
     
     useEffect(() => {
-        const func = async () => {
-            const tasks = await axios.get(`${link}/`);
-            setData(tasks);
-            console.log(tasks);
-        }
 
-        func();
+        const func = async () => {
+            try{
+                const tasks = await axios.get(`${link}/personal/`, {headers: {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`}});
+                setData(tasks);
+                console.log(tasks);
+            }
+            catch{
+                return;
+            }
+            }
+            func();
+            
 
     }, [])
     
@@ -26,7 +32,7 @@ const Personal = () => {
             <h1> THIS IS PERSONAL! </h1>
 
             <h1> WILL HAVE TO implement getting everythign that belongs to a user.</h1>
-            <h1>dsdf</h1>
+            {/* <h1>{JSON.stringify(data)}</h1> */}
 
         </div>
     )

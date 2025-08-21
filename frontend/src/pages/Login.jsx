@@ -3,6 +3,7 @@ import { useActionState } from "react"
 import axios from 'axios';
 import "../main.css";
 import { Link, useNavigate } from "react-router";
+import { useEffect } from "react";
 
 
 
@@ -28,8 +29,8 @@ const Login = () =>{
 
                 if (res.data.message  == 'correct'){
                     console.log(res.data)
-                    sessionStorage.setItem("accessToken", "res.data.token");
-                    nav("/personal")
+                    sessionStorage.setItem("accessToken", res.data.token);
+                    nav("/personal");
                 }
             }
         }
@@ -37,6 +38,22 @@ const Login = () =>{
             console.log("There was an error" + e);
         }
     }
+
+    useEffect(() =>{
+        const loggedIn = () => { 
+        const token = sessionStorage.getItem("accessToken");
+        // console.log("TOKEN IS " + token);
+        if (token != null){
+            nav("/personal");
+        }
+
+    }
+    loggedIn();
+
+
+    }, [])
+        
+    
 
 
     return(
@@ -50,6 +67,7 @@ const Login = () =>{
             <button className="text-2xl bg-blue"><Link to="/register">REGISTER</Link></button>
         </div>
     )
+    
 }
 
 export default Login

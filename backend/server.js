@@ -21,6 +21,30 @@ const createToken = (user) =>{
 }
 
 
+const verifyToken = (req, res, next) => {
+
+
+    
+    const token = req.headers['authorization'].split(' ')[1]
+    // console.log(token)
+
+    try{
+        const jwtVerified = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        req.user = jwtVerified.user;
+
+        // console.log(jwtVerified);
+        // console.log(jwtVerified.user);
+        next();
+    }
+    catch{
+        return res.status(400).send({"message": "bad token"});
+    }
+}
+
+
+app.use("/personal", verifyToken);
+
+
 
 app.get('/users', async  (req, res) =>{
     console.log(req.body);
@@ -76,10 +100,16 @@ app.get("", async(req, res) => {
     res.send("WE'RE CONNECTED");
 })
 
+app.get("/personal", async(req, res) =>{
+    const user = req.user;
+    const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
+
+    const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1", [user_id])).rows
+    console.log(tasks);
 
 
-
-
+    res.status(200).send({"message": "success", "tasks": tasks})
+})
 
 app.listen(3333, ()=>(
     console.log("We're connected \n http://localhost:3333")
