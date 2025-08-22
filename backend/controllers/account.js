@@ -1,5 +1,5 @@
-import { createToken,verifyToken } from "../helpers/helpers";
-import connection from "../helpers/connect";
+import { createToken,verifyToken } from "../helpers/helpers.js";
+import connection from "../helpers/connect.js";
 import argon2 from 'argon2';
 
 

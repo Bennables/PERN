@@ -1,3 +1,6 @@
+import jwt from 'jsonwebtoken';
+
+
 const createToken = (user) =>{
     const token = jwt.sign({user: user}, process.env.JWT_SECRET_KEY, {expiresIn: "1h"});
     // console.log("The JWT is: " + token)

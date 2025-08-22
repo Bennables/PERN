@@ -1,0 +1,10 @@
+Literally folow the docs. I'm on mac, so here you god 
+
+https://redis.io/docs/latest/operate/oss_and_stack/install/archive/install-redis/install-redis-on-mac-os/
+
+
+npm i redis
+import {redis} from redis;
+const redisClient = redis.createClient();
+
+default port is in 6379
