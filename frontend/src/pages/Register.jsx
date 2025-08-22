@@ -21,9 +21,9 @@ const Register = () =>{
         else{
             const link = import.meta.env.VITE_LINK;
             const reply = await axios.post(`${link}/register`, {username: username, password: password})
-            
+            console.log()
             if(reply.data == "created"){
-                nav("/personal", {state: {username:username}})
+                nav("/login")
             }
 
         }

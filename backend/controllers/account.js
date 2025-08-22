@@ -18,7 +18,9 @@ const login = async(req, res) =>{
 
 
     if (verified){
-        res.status(200).send({"message": "correct", "token": createToken(username)});
+        const token = await createToken(username)
+        res.status(200).send({"message": "correct", "token": token});
+        // console.log("TOKEN is" + token);
     }
    
 }
