@@ -24,7 +24,7 @@ const Login = () =>{
             else{
                 const link = import.meta.env.VITE_LINK;
 
-                const res = await axios.post(`${link}/login`, {username: username, password: password});
+                const res = await axios.post(`${link}/login`, {username: username, password: password}, {withCredentials: true});
                 // console.log(res.data);
 
                 if (res.data.message  == 'correct'){
