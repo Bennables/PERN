@@ -22,4 +22,26 @@ const getUsers = async  (req, res) =>{
     res.status(200).send("we're good. don't worry")
 }
 
-export { connect, getTasks, getUsers}
+const new_refresh = async(req, res) =>{
+
+    const refreshToken = req.cookies.refreshToken;
+    console.log(req.cookies)
+    // console.log("refresh token is " + refreshToken)
+
+    if (!refreshToken || refreshToken == undefined || refreshToken == 'undefined'){
+        console.log("token doesn't exist")
+        res.status(401).send({'message': 'token doesn\'t exist'});
+        return
+    }
+    const refreshed = await refreshTokens(refreshToken);
+    if (refreshed == null){
+        res.status(400).send({"message" : "it doesn't exist yet"})
+        return
+    }
+    res.cookie("refreshToken", refreshed[1], {sameSite: 'lax', httpOnly: true})
+    res.status(200).send({'message':"refreshed", "token": refreshed[0]})
+}
+
+
+
+export { connect, getTasks, getUsers, new_refresh}
