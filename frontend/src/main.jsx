@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import "./main.css";
 import Register from './pages/Register';
 import Personal from './pages/Personal';
+import Item from './pages/Dragger';
 
 
 
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
   {path: "/register", element: <Register/>},
   // {path: "/group", element: <GroupBoard/>},
   {path: "/personal", element: <Personal/>},
+  {path:"/drag", element: <Item/>}
 ])
 
 createRoot(document.getElementById('root')).render(

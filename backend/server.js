@@ -23,6 +23,12 @@ app.post("/login", login);
 app.post("/register", register);
 app.get("/auth/refresh", new_refresh);
 
+// ===== UTILITY ROUTES =====
+app.get("/clear", (req, res) => {
+    res.clearCookie("refreshToken");
+    res.status(200).send({"message": "cookies have been cleared"});
+});
+
 // ===== PROTECTED ROUTES (Authentication Required) =====
 // Apply verifyToken middleware to all routes below
 app.use(verifyToken);
@@ -30,12 +36,6 @@ app.use(verifyToken);
 app.get("/personal", connect);  // Test connection route
 app.get("/personal/tasks", getTasks);  // Get user's tasks
 app.get("/personal/users", getUsers);  // Get all users (admin route?)
-
-// ===== UTILITY ROUTES =====
-app.get("/clear", (req, res) => {
-    res.clearCookie("refreshToken");
-    res.status(200).send({"message": "cookies have been cleared"});
-});
 
 app.listen(3333, () => {
     console.log("We're connected \n http://localhost:3333");

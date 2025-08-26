@@ -58,6 +58,7 @@ const verifyToken = async (req, res, next) => {
 
 
 //TODO fix tokens not working
+
 const refreshTokens = async (refreshToken) =>{
     const verifiedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
     if (await redisClient.sIsMember("refreshTokens", refreshToken)){

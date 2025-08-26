@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 
 
 
+
 const Personal = () => { 
     const link = import.meta.env.VITE_LINK
     const [loading, setLoading] = useState(false);
@@ -77,6 +78,7 @@ const Personal = () => {
 
 
             <button onClick={() =>logout()} className="border-2 bg-red-50"> dkljfsoldjflkdsfjl</button>
+            
 
         </div>
     )
