@@ -5,23 +5,20 @@ import {v4 as uuidv4} from 'uuid';
 
 const createToken = async (user) =>{
     console.log('running create token')
-    const jwtid = uuidv4();
-    const token = jwt.sign({user: user, jwtid: jwtid}, process.env.JWT_SECRET_KEY, {expiresIn: "10s"});
-    const refreshid = uuidv4();
-    const refreshToken = jwt.sign({user: user, refreshid: refreshid}, process.env.REFRESH_SECRET_KEY, {expiresIn: "7d"});
+    const token = jwt.sign({user: user}, process.env.JWT_SECRET_KEY, {expiresIn: "20s"});
+    const refreshToken = jwt.sign({user: user}, process.env.REFRESH_SECRET_KEY, {expiresIn: "7d"});
 
-    console.log(token);
     // console.log("The JWT is: " + token)
-    await redisClient.set(refreshid, "banaa");
+    await redisClient.sAdd("refreshTokens", refreshToken)
 
     return [token, refreshToken];
 }
 
 
 const verifyToken = async (req, res, next) => {
+    // console.log(req.headers);
     console.log('verifying token');
     const token = req.headers['authorization'].split(' ')[1]
-    // console.log(token)
 
     try{
         const jwtVerified = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -33,10 +30,9 @@ const verifyToken = async (req, res, next) => {
             exp: 1755892144
         } 
         */
-        const token_from_redis = await redisClient.get(jwtVerified.jwtid)
+
         req.user = jwtVerified.user;
 
-        console.log('token from redis is. ' + token_from_redis)
 
         // console.log(jwtVerified);
         // console.log(jwtVerified.user);
@@ -46,15 +42,36 @@ const verifyToken = async (req, res, next) => {
 
         //this should get you a new refreshtoken. Done in the front end.
         if (e.name == 'TokenExpiredError'){
+            // console.log(e);
             return res.status(401).send({"message" : 'token expired'})
         }
         
-        console.log(e)
+        // console.log(e)
 
         //this should redirect to login
+
+        console.log(e.name +" " +  e.message)
+        // console.log(e)
         return res.status(400).send({"message": "bad token"});
     }
 }
 
 
-export {createToken, verifyToken};
+//TODO fix tokens not working
+const refreshTokens = async (refreshToken) =>{
+    const verifiedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+    if (await redisClient.sIsMember("refreshTokens", refreshToken)){
+        await redisClient.sRem("refreshTokens", refreshToken);
+        const newTokens =  await createToken(verifiedRefresh.user);
+        console.log('newtokesn ' + newTokens[1])
+        return newTokens;
+    }
+    else{
+        return null;
+    }
+    
+   
+}
+
+
+export {createToken, verifyToken, refreshTokens};

@@ -1,4 +1,4 @@
-import { createToken,verifyToken } from "../helpers/helpers.js";
+import { createToken } from "../helpers/helpers.js";
 import connection from "../helpers/connect.js";
 import argon2 from 'argon2';
 import Cookies from 'js-cookie';
@@ -7,8 +7,7 @@ import Cookies from 'js-cookie';
 
 const login = async(req, res) =>{
 
-    console.log("We have received data");
-    console.log(req.body);
+    console.log("running login")
     const password = req.body.password;
     const username = req.body.username;
 
@@ -21,10 +20,11 @@ const login = async(req, res) =>{
 
     if (verified){
         const tokens = await createToken(username);
+        console.log("THE TOKESN ARE HERE")
+        console.log()
         res.cookie("refreshToken", tokens[1], {sameSite: 'lax', httpOnly: true})
         res.status(200).send({"message": "correct", "token": tokens[0]});
         console.log(tokens);
-        // console.log("TOKEN is" + token);
     }
    
 }

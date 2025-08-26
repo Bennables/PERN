@@ -42,11 +42,11 @@ const Login = () =>{
     useEffect(() =>{
         const loggedIn = () => { 
         const token = sessionStorage.getItem("accessToken");
-        // console.log("TOKEN IS " + token);
+        console.log("TOKEN IS " + token);
         if (token != null){
+            console.log('naving to personal')
             nav("/personal");
         }
-
     }
     loggedIn();
 

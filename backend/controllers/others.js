@@ -1,3 +1,5 @@
+import connection from "../helpers/connect.js";
+
 const connect = async(req, res) => { 
     res.send("WE'RE CONNECTED");
 }
