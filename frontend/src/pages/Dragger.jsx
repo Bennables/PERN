@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useState } from 'react';
+import { useEffect } from 'react';
+import Droppy from '../components/drag';
+import axios from 'axios';
 
 // fake data generator
 //TODO put data from db into here
@@ -16,7 +19,18 @@ const getItems = (count, offset = 0) =>
 /**
  * Moves an item from one list to another list.
  */
-const move = (source, destination, droppableSource, droppableDestination) => {
+
+
+/* 
+
+* THESE SHOULD WORK FINE WITH MULTIPLE LISTS
+
+
+
+*/
+const move = (source, destination, droppableSource, droppableDestination, state, id2List) => {
+
+    
     //copy boht lists
     const sourceClone = Array.from(source);
     const destClone = Array.from(destination);
@@ -26,10 +40,11 @@ const move = (source, destination, droppableSource, droppableDestination) => {
     destClone.splice(droppableDestination.index, 0, removed);
 
     //updating values
-    const result = {};
-    result[droppableSource.droppableId] = sourceClone;
-    result[droppableDestination.droppableId] = destClone;
+    const result = {...state};
+    result[id2List[droppableSource.droppableId]] = sourceClone;
+    result[id2List[droppableDestination.droppableId]] = destClone;
 
+    console.log(result);
     return result;
 };
 
@@ -68,49 +83,56 @@ const reorder = (list, startIndex, endIndex) => {
     return result;
 }
 
+const Item = () =>{
 
-class Item extends Component {
-    state = {
-        //generates 2 arrays, 10 items and 5 items
-        // 10 for items
-        // 5 for selected, 11,12,13,14,15
-        items: getItems(10),
-        selected: getItems(5, 10)
-    };
+    const link = import.meta.env.VITE_LINK
 
-    /**
-     * A semi-generic way to handle multiple lists. Matches
-     * the IDs of the droppable container to the names of the
-     * source arrays stored in the state.
-     */
-    id2List = {
+
+
+    useEffect( () => { 
+        //need to make requests here    
+
+        axios.get(`${link}/tasks`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}})
+        .then(data =>{
+            //TODO how do i work with this data?
+            console.log(data);
+        })
+        .catch(e => {
+            console.log("THERE WAS AN ERROR" + e)
+        })
+    }, [])
+
+
+
+    const [state, setState] = useState({
+        items:getItems(10),
+        selected:getItems(5,10),
+        hehe:getItems(5,15)
+    });
+
+    const [tasks, setTasks] = useState([]);
+    const id2List = {
         //ids for two lists
         droppable: 'items',
-        droppable2: 'selected'
+        droppable2: 'selected',
+        droppable3: "hehe"
     };
 
+    // this grabs the associated list in state
+    const getList = id => state[id2List[id]];
 
-    //! this one takse the id, and gets the array form state.
-    // id2list and state are objects
-    getList = id => this.state[this.id2List[id]];
+    const onDragEnd = result =>{
+        const {source, destination} = result;
 
-
-
-    onDragEnd = result => {
-        //result has source/dest ig
-        const { source, destination } = result;
-
-        // dropped outside the list
-        if (!destination) {
+        if (!destination) { 
             return;
         }
-        
 
-    
         //if it drops in the same container
+        //todo more logic required here
         if (source.droppableId === destination.droppableId) {
             const items = reorder(
-                this.getList(source.droppableId),
+                getList(source.droppableId),
                 source.index,
                 destination.index
             );
@@ -118,100 +140,57 @@ class Item extends Component {
             //! this part only works with components (extends component)
             //! they can merge setstates, usually, they just replace
             //update, by default assumes you're updating items
-            let state = { items };
 
+            // console.log("STATET IS" + state);
+
+            let statee = {};
+            if (source.droppableId === 'droppable') {
+                statee = {...state, items: items };
+            }
             //now state only updates the second one
             if (source.droppableId === 'droppable2') {
-                state = { selected: items };
+                statee = {...state, selected: items };
+            }
+
+            if (source.droppableId == 'droppable3') {
+                statee = {...state, hehe:items}
             }
             
             //will update with state
-            this.setState(state);
+
+            console.log("STATET IS");
+            console.log(state);
+            setState(statee);
         } else {
             const result = move(
-                this.getList(source.droppableId),
-                this.getList(destination.droppableId),
+                getList(source.droppableId),
+                getList(destination.droppableId),
                 source,
-                destination
+                destination,
+                state,
+                id2List
             );
 
-            this.setState({
-                items: result.droppable,
-                selected: result.droppable2
+            setState({
+                items: result.items,
+                selected: result.selected,
+                hehe: result.hehe
             });
         }
     };
 
 
-    
+    console.log(state);
+    return (
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppy id="droppable"state = {state.items}/>
+            <Droppy id="droppable2" state={state.selected}/>
+            <Droppy id="droppable3" state={state.hehe}/>
+            {/* <Droppy /> */}
+        </DragDropContext>
+    )
 
-    // Normally you would want to split things out into separate components.
-    // But in this example everything is just done in one place for simplicity
-    render() {
-        return (
-            <DragDropContext onDragEnd={this.onDragEnd}>
-                <Droppable droppableId="droppable">
-                    {(provided, snapshot) => (
-                        <div
-                            ref={provided.innerRef}
-                            style={getListStyle(snapshot.isDraggingOver)}>
-                            {this.state.items.map((item, index) => (
-                                <Draggable
-                                    key={item.id}
-                                    draggableId={item.id}
-                                    index={index}>
-                                    {(provided, snapshot) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            style={getItemStyle(
-                                                snapshot.isDragging,
-                                                provided.draggableProps.style
-                                            )}>
-                                            {item.content}
-                                        </div>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-                <Droppable droppableId="droppable2">
-                    {(provided, snapshot) => (
-                        <div
-                            ref={provided.innerRef}
-                            style={getListStyle(snapshot.isDraggingOver)}>
-                            {this.state.selected.map((item, index) => (
-                                <Draggable
-                                    key={item.id}
-                                    draggableId={item.id}
-                                    index={index}>
-                                    {(provided, snapshot) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            style={getItemStyle(
-                                                snapshot.isDragging,
-                                                provided.draggableProps.style
-                                            )}>
-                                            {item.content}
-                                        </div>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
-        );
-    }
 }
 
-
-
-
 export default Item
+

@@ -34,8 +34,12 @@ app.get("/clear", (req, res) => {
 app.use(verifyToken);
 
 app.get("/personal", connect);  // Test connection route
-app.get("/personal/tasks", getTasks);  // Get user's tasks
 app.get("/personal/users", getUsers);  // Get all users (admin route?)
+
+//! adfsfasdfsdafdslkfjds;lkfj;dslkgfjafk;gjf;lkgjf;lkgj;flgjlkfdg
+//! WORKING HERE    lkdjlk;d;fjfd;kjfsad;d;lajkfjad;fk
+
+app.get("/tasks", getTasks)
 
 app.listen(3333, () => {
     console.log("We're connected \n http://localhost:3333");

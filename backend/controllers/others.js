@@ -1,4 +1,5 @@
 import connection from "../helpers/connect.js";
+import { refreshTokens } from "../helpers/helpers.js";
 
 const connect = async(req, res) => { 
     res.send("WE'RE CONNECTED");
@@ -6,8 +7,8 @@ const connect = async(req, res) => {
 
 const getTasks = async(req, res) =>{
     const user = req.user;
-    const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
 
+    const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
     const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1", [user_id])).rows
     console.log(tasks);
 
