@@ -143,24 +143,24 @@ const Item = () =>{
 
             // console.log("STATET IS" + state);
 
-            let statee = {};
+            let newState= {};
             if (source.droppableId === 'droppable') {
-                statee = {...state, items: items };
+                newState = {...state, items: items };
             }
             //now state only updates the second one
             if (source.droppableId === 'droppable2') {
-                statee = {...state, selected: items };
+                newState = {...state, selected: items };
             }
 
             if (source.droppableId == 'droppable3') {
-                statee = {...state, hehe:items}
+                newState = {...state, hehe:items}
             }
             
             //will update with state
 
             console.log("STATET IS");
             console.log(state);
-            setState(statee);
+            setState(newState);
         } else {
             const result = move(
                 getList(source.droppableId),
