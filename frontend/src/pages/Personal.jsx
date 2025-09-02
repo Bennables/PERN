@@ -8,11 +8,12 @@ import Item from "../components/Dragger";
 
 
 const Personal = () => { 
+    const nav = useNavigate();
     const link = import.meta.env.VITE_LINK
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([])
 
-    const nav = useNavigate();
+    
     
     useEffect(() => {
 

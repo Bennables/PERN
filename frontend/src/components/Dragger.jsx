@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import Droppy from './drag';
 import axios from 'axios';
+import { useNavigate } from 'react-router';
 
 // fake data generator
 //TODO put data from db into here
@@ -85,7 +86,7 @@ const reorder = (list, startIndex, endIndex) => {
 const Item = () =>{
 
     const link = import.meta.env.VITE_LINK
-
+    const nav = useNavigate(); // ✅ CORRECT: Hook at top level
 
     const [loaded, setLoaded] = useState(false)
 
@@ -138,8 +139,23 @@ const Item = () =>{
                     setState(newState);
                     setLoaded(true);
                 })
-                .catch(e => {
-                    console.log("THERE WAS AN ERROR" + e)
+                .catch(async err =>{
+                    if(err.response.data.message == 'token expired'){
+                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
+                            .then(res =>{
+                                console.log(res);   
+                                console.log("WE're getting here successfully" ) 
+                                sessionStorage.setItem("accessToken", res.data.token)   
+                            })
+                            .catch(err => { 
+                                console.log(err);
+                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
+                                    sessionStorage.removeItem('accessToken')
+                                    nav(`/login`);
+                                }
+                            })
+                    }
+                    
                 })
             }
         }
@@ -155,6 +171,7 @@ const Item = () =>{
     useEffect( () => {
 
         const update = async() => {
+
             if(loaded && Object.keys(state).length > 0){
             console.log("WE ARE UPDATED");
             const link = import.meta.env.VITE_LINK
@@ -172,7 +189,30 @@ const Item = () =>{
                 }
             })
 
-            await axios.put(`${link}/tasks`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
+            axios.put(`${link}/tasks`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
+            .then(res =>{
+                console.log(res);
+                }
+            )
+            .catch(async err =>{
+                if(err.response.data.message == 'token expired'){
+                    await axios.get(`${link}/auth/refresh`, {withCredentials: true})
+                        .then(res =>{
+                            console.log(res);   
+                            console.log("WE're getting here successfully" ) 
+                            sessionStorage.setItem("accessToken", res.data.token)   
+                        })
+                        .catch(err => { 
+                            console.log(err);
+                            if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
+                                sessionStorage.removeItem('accessToken')
+                                nav(`/login`);
+                            }
+                        })
+                }
+                
+            }
+            )
             }
             
         }
@@ -252,13 +292,113 @@ const Item = () =>{
     };
 
 
+    if (!loaded) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-slate-600 text-lg">Loading your tasks...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <DragDropContext onDragEnd={onDragEnd}>
-            <Droppy id="droppable"  state={state.low || []}/>
-            <Droppy id="droppable2" state={state.high || []}/>
-            <Droppy id="droppable3" state={state.any || []}/>
-            {/* <Droppy /> */}
-        </DragDropContext>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            {/* Header */}
+            <div className="bg-white shadow-sm border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900">Task Board</h1>
+                            <p className="text-slate-600 mt-1">Organize your tasks by priority</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <div className="bg-slate-100 px-3 py-1 rounded-full">
+                                <span className="text-sm font-medium text-slate-700">
+                                    {(state.low?.length || 0) + (state.high?.length || 0) + (state.any?.length || 0)} tasks
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Low Priority Section */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        <h2 className="text-lg font-semibold text-green-800">Low Priority</h2>
+                                    </div>
+                                    <span className="bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                                        {state.low?.length || 0}
+                                    </span>
+                                </div>
+                                <p className="text-green-600 text-sm mt-1">Tasks that can be done when time permits</p>
+                            </div>
+                            <div className="p-4 min-h-[400px]">
+                                <Droppy id="droppable" state={state.low || []} urgencyColor="green"/>
+                            </div>
+                        </div>
+
+                        {/* High Priority Section */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-orange-50 border-b border-orange-100 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                        <h2 className="text-lg font-semibold text-orange-800">High Priority</h2>
+                                    </div>
+                                    <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                                        {state.high?.length || 0}
+                                    </span>
+                                </div>
+                                <p className="text-orange-600 text-sm mt-1">Important tasks that need attention soon</p>
+                            </div>
+                            <div className="p-4 min-h-[400px]">
+                                <Droppy id="droppable2" state={state.high || []} urgencyColor="orange"/>
+                            </div>
+                        </div>
+
+                        {/* Any Priority Section */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                        <h2 className="text-lg font-semibold text-blue-800">Flexible</h2>
+                                    </div>
+                                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                                        {state.any?.length || 0}
+                                    </span>
+                                </div>
+                                <p className="text-blue-600 text-sm mt-1">Tasks that can be done at any time</p>
+                            </div>
+                            <div className="p-4 min-h-[400px]">
+                                <Droppy id="droppable3" state={state.any || []} urgencyColor="blue"/>
+                            </div>
+                        </div>
+
+                    </div>
+                </DragDropContext>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white border-t border-slate-200 mt-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <p className="text-center text-slate-500 text-sm">
+                        Drag and drop tasks between sections to change their priority
+                    </p>
+                </div>
+            </div>
+        </div>
     )
 
 }

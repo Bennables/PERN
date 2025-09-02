@@ -5,7 +5,7 @@ import {v4 as uuidv4} from 'uuid';
 
 const createToken = async (user) =>{
     console.log('running create token')
-    const token = jwt.sign({user: user}, process.env.JWT_SECRET_KEY, {expiresIn: "10m"});
+    const token = jwt.sign({user: user}, process.env.JWT_SECRET_KEY, {expiresIn: "10s"});
     const refreshToken = jwt.sign({user: user}, process.env.REFRESH_SECRET_KEY, {expiresIn: "7d"});
 
     // console.log("The JWT is: " + token)
