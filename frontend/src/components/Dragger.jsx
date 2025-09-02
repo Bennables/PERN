@@ -83,12 +83,25 @@ const reorder = (list, startIndex, endIndex) => {
     return result;
 }
 
-const Item = () =>{
+const Item = (props) =>{
 
     const link = import.meta.env.VITE_LINK
     const nav = useNavigate(); // ✅ CORRECT: Hook at top level
 
     const [loaded, setLoaded] = useState(false)
+    const [error, setError] = useState(null)
+
+    // Simple notification system
+    const showNotification = (message) => {
+        setError(message);
+        setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+    };
+
+    // Check if environment variable exists
+    if (!link) {
+        console.error("VITE_LINK environment variable is not defined");
+        return <div>Configuration error. Please check environment variables.</div>;
+    }
 
 
     const [state, setState]= useState({})
@@ -109,10 +122,15 @@ const Item = () =>{
         //need to make requests here    
         const getData =  async() =>{
             if (!loaded){
-                await axios.get(`${link}/tasks`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}}, {withCredentials: true})
+                console.log("Dest is" + props.dest)
+                await axios.get(`${link}/${props.dest}`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}}, {withCredentials: true})
                 .then(res =>{
-                    //TODO how do i work with this data?
-                    let tasks = res.data.tasks
+                    // Validate response data with short-circuiting
+                    let tasks = res.data && res.data.tasks && Array.isArray(res.data.tasks) ? res.data.tasks : [];
+                    
+                    if (tasks.length === 0) {
+                        console.log("No tasks found or invalid data format");
+                    }
                     
                     let newState = {
                         low:[],
@@ -124,12 +142,24 @@ const Item = () =>{
                     
 
                     for(let i = 0; i < tasks.length; i++){
-                        if (tasks[i].urgency == null){
-                            //! testing push toall 
-                            newState[MAPPER[1]].push(tasks[i])
+                        const task = tasks[i];
+                        if (!task || !task.task_id) {
+                            console.warn("Invalid task data:", task);
                             continue;
                         }
-                        newState[MAPPER[tasks[i].urgency]].push(tasks[i])
+                        
+                        if (task.urgency == null){
+                            newState[MAPPER[1]].push(task);
+                            continue;
+                        }
+                        
+                        // Validate urgency value
+                        if (MAPPER[task.urgency]) {
+                            newState[MAPPER[task.urgency]].push(task);
+                        } else {
+                            console.warn("Invalid urgency value:", task.urgency);
+                            newState[MAPPER[1]].push(task); // Default to low priority
+                        }
 
                         
                     }
@@ -140,22 +170,56 @@ const Item = () =>{
                     setLoaded(true);
                 })
                 .catch(async err =>{
-                    if(err.response.data.message == 'token expired'){
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log(res);   
-                                console.log("WE're getting here successfully" ) 
-                                sessionStorage.setItem("accessToken", res.data.token)   
-                            })
-                            .catch(err => { 
-                                console.log(err);
-                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken')
-                                    nav(`/login`);
-                                }
-                            })
+                    console.log("Error fetching tasks:", err);
+                    
+                    // Handle network errors
+                    if (!err.response) {
+                        showNotification("Connection failed. Check your internet connection.");
+                        return;
                     }
                     
+                    const status = err.response.status;
+                    
+                    // Handle different HTTP status codes
+                    if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
+                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
+                            .then(res =>{
+                                console.log("Token refreshed successfully");
+                                sessionStorage.setItem("accessToken", res.data.token);
+                                // Retry the original request
+                                window.location.reload();
+                            })
+                            .catch(refreshErr => { 
+                                console.log("Refresh token failed:", refreshErr);
+                                if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
+                                    sessionStorage.removeItem('accessToken');
+                                    nav('/login');
+                                } else {
+                                    showNotification("Session expired. Please login again.");
+                                    nav('/login');
+                                }
+                            });
+                    }
+                    else if (status === 403) {
+                        showNotification("Access denied. Redirecting to login...");
+                        setTimeout(() => nav('/login'), 2000);
+                    }
+                    else if (status === 400) {
+                        showNotification("Invalid request. Please check your data.");
+                    }
+                    else if (status === 404) {
+                        console.error("API endpoint not found - check your routes");
+                        showNotification("Service temporarily unavailable.");
+                    }
+                    else if (status === 429) {
+                        showNotification("Too many requests. Please wait a moment before trying again.");
+                    }
+                    else if (status >= 500) {
+                        showNotification("Server error. Please try again later.");
+                    }
+                    else {
+                        showNotification("An unexpected error occurred.");
+                    }
                 })
             }
         }
@@ -195,22 +259,54 @@ const Item = () =>{
                 }
             )
             .catch(async err =>{
-                if(err.response.data.message == 'token expired'){
-                    await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                        .then(res =>{
-                            console.log(res);   
-                            console.log("WE're getting here successfully" ) 
-                            sessionStorage.setItem("accessToken", res.data.token)   
-                        })
-                        .catch(err => { 
-                            console.log(err);
-                            if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
-                                sessionStorage.removeItem('accessToken')
-                                nav(`/login`);
-                            }
-                        })
+                console.log("Error updating tasks:", err);
+                
+                // Handle network errors
+                if (!err.response) {
+                    showNotification("Connection failed. Changes may not be saved.");
+                    return;
                 }
                 
+                const status = err.response.status;
+                
+                // Handle different HTTP status codes
+                if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
+                    await axios.get(`${link}/auth/refresh`, {withCredentials: true})
+                        .then(res =>{
+                            console.log("Token refreshed for update");
+                            sessionStorage.setItem("accessToken", res.data.token);
+                        })
+                        .catch(refreshErr => { 
+                            console.log("Refresh failed during update:", refreshErr);
+                            if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
+                                sessionStorage.removeItem('accessToken');
+                                nav('/login');
+                            } else {
+                                showNotification("Session expired. Please login again.");
+                                nav('/login');
+                            }
+                        });
+                }
+                else if (status === 403) {
+                    showNotification("Access denied. Redirecting to login...");
+                    setTimeout(() => nav('/login'), 2000);
+                }
+                else if (status === 400) {
+                    showNotification("Invalid data sent. Changes not saved.");
+                }
+                else if (status === 404) {
+                    console.error("Update endpoint not found - check your API routes");
+                    showNotification("Service temporarily unavailable.");
+                }
+                else if (status === 429) {
+                    showNotification("Too many updates. Please wait before making more changes.");
+                }
+                else if (status >= 500) {
+                    showNotification("Server error. Changes may not be saved.");
+                }
+                else {
+                    showNotification("Failed to save changes.");
+                }
             }
             )
             }
@@ -298,6 +394,11 @@ const Item = () =>{
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
                     <p className="text-slate-600 text-lg">Loading your tasks...</p>
+                    {error && (
+                        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                            {error}
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -305,6 +406,22 @@ const Item = () =>{
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            {/* Error Notification */}
+            {error && (
+                <div className="fixed top-4 right-4 z-50 max-w-sm">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
+                        <div className="flex justify-between items-start">
+                            <span className="text-sm">{error}</span>
+                            <button 
+                                onClick={() => setError(null)}
+                                className="ml-2 text-red-500 hover:text-red-700"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

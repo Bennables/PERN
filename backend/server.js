@@ -37,13 +37,25 @@ app.use(verifyToken);
 app.get("/personal", connect);  // Test connection route
 app.get("/personal/users", getUsers);  // Get all users (admin route?)
 
-//! adfsfasdfsdafdslkfjds;lkfj;dslkgfjafk;gjf;lkgjf;lkgj;flgjlkfdg
-//! WORKING HERE    lkdjlk;d;fjfd;kjfsad;d;lajkfjad;fk
+
 
 app.get("/tasks", getTasks)
 app.put("/tasks", updateTasks)
 
 
+const getTeamTasks = async(req, res) =>{
+    const org_id = parseInt((await connection.query("SELECT org_id FROM users WHERE username=$1", [req.user])).rows[0].org_id);
+    console.log(org_id)
+    console.log("THE ORG ID IS: " + org_id);
+
+
+    const teamTasks = await connection.query("SELECT * FROM tasks WHERE org_id = $1 ORDER BY urgency, ind", [org_id]);
+    // console.log(teamTasks)
+
+    res.status(200).send({"message": "success", "tasks": teamTasks.rows})
+}
+
+app.get("/team", getTeamTasks);
 
 
 

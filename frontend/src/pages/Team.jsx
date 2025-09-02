@@ -73,7 +73,7 @@ const Personal = () => {
     
     return(
         <div>
-            <Item dest={"tasks"}/>
+            <Item dest={"team"}/>
         </div>
     )
 }

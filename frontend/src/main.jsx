@@ -7,6 +7,7 @@ import "./main.css";
 import Register from './pages/Register';
 import Personal from './pages/Personal';
 import Item from './components/Dragger';
+import Team from './pages/Team';
 
 
 
@@ -14,7 +15,7 @@ const router = createBrowserRouter([
   {path:"/", element:<Login/>},
   {path: "/login", element: <Login/>},
   {path: "/register", element: <Register/>},
-  // {path: "/group", element: <GroupBoard/>},
+  {path: "/team", element: <Team/>},
   {path: "/personal", element: <Personal/>},
   {path:"/drag", element: <Item/>}
 ])

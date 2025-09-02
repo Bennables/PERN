@@ -6,4 +6,7 @@ CREATE TABLE shared_tasks(
     urgency VARCHAR(16)
 );
 
-
+CREATE TABLE organization(
+    org_id SERIAL PRIMARY KEY,
+    ppl_ids INT[],
+)

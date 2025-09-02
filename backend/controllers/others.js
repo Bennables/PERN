@@ -10,8 +10,7 @@ const getTasks = async(req, res) =>{
 
     const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
     const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind", [user_id])).rows
-    console.log(tasks);
-
+    // console.log(tasks);
 
     res.status(200).send({"message": "success", "tasks": tasks})
 }
@@ -78,11 +77,11 @@ const updateTasks = async(req, res) => {
         queryStr += ` ELSE ind END WHERE owner_id = $${++ind};`
 
 
-        const result = await connection.query(queryStr, data)
-        console.log(result)
+        const result = await connection.query(queryStr, data);
+        // console.log(result)
 
-        console.log(queryStr)
-        console.log(data)
+        // console.log(queryStr)
+        // console.log(data)
 
         res.status(200).send({"message" : "Tasks updated successfully"})
     }
