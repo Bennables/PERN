@@ -43,6 +43,55 @@ const new_refresh = async(req, res) =>{
     res.status(200).send({'message':"refreshed", "token": refreshed[0]})
 }
 
+const updateTasks = async(req, res) => {
+    try{
+        const data = []
+
+        const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
+        // console.log(user_id);
 
 
-export { connect, getTasks, getUsers, new_refresh}
+        // console.log(user);
+        console.log(req.body);
+
+        
+
+        let ind = 0
+
+
+        // console.log(info);
+        let queryStr = "UPDATE tasks SET urgency = CASE";
+
+        for(let i = 0; i < req.body.length ; ++i){
+            data.push(req.body[i].task_id)
+            data.push(req.body[i].urgency)
+            queryStr += ` WHEN task_id = $${++ind} THEN $${++ind}`
+        }
+        queryStr += " ELSE urgency END, ind = CASE"
+        for(let i = 0; i < req.body.length ; ++i){
+            data.push(req.body[i].task_id)
+            data.push(req.body[i].index)
+            queryStr += ` WHEN task_id = $${++ind} THEN $${++ind}`
+
+        }
+        data.push(user_id) 
+        queryStr += ` ELSE ind END WHERE owner_id = $${++ind};`
+
+
+        const result = await connection.query(queryStr, data)
+        console.log(result)
+
+        console.log(queryStr)
+        console.log(data)
+
+        res.status(200).send({"message" : "Tasks updated successfully"})
+    }
+    catch(e){
+        console.log("Error updating tasks:", e)
+        res.status(500).send({"message": "Failed to update tasks", "error": e.message})
+    }
+    
+}
+
+
+export { connect, getTasks, getUsers, new_refresh, updateTasks }
