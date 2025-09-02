@@ -2,6 +2,7 @@ import axios from "axios";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import Item from "../components/Dragger";
 
 
 
@@ -71,15 +72,7 @@ const Personal = () => {
     
     return(
         <div>
-            <h1> THIS IS PERSONAL! </h1>
-
-            <h1> WILL HAVE TO implement getting everythign that belongs to a user.</h1>
-            {/* <h1>{JSON.stringify(data)}</h1> */}
-
-
-            <button onClick={() =>logout()} className="border-2 bg-red-50"> dkljfsoldjflkdsfjl</button>
-            
-
+            <Item/>
         </div>
     )
 }

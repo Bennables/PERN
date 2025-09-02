@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import Droppy from '../components/drag';
+import Droppy from './drag';
 import axios from 'axios';
 
 // fake data generator
@@ -44,7 +44,6 @@ const move = (source, destination, droppableSource, droppableDestination, state,
     result[id2List[droppableSource.droppableId]] = sourceClone;
     result[id2List[droppableDestination.droppableId]] = destClone;
 
-    console.log(result);
     return result;
 };
 
@@ -88,34 +87,110 @@ const Item = () =>{
     const link = import.meta.env.VITE_LINK
 
 
+    const [loaded, setLoaded] = useState(false)
 
+
+    const [state, setState]= useState({})
+
+    const MAPPER = {
+        1: "low",
+        2: "high",
+        3: "any",
+        4: "done",
+    }
+
+    //! working hererererererer
+
+    //!fdsfsdfsdfsdfdsfdsfdsf
+    //!d
+    //!fsfadsfsdafsdafsadfdsaf
     useEffect( () => { 
         //need to make requests here    
+        const getData =  async() =>{
+            if (!loaded){
+                await axios.get(`${link}/tasks`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}}, {withCredentials: true})
+                .then(res =>{
+                    //TODO how do i work with this data?
+                    let tasks = res.data.tasks
+                    
+                    let newState = {
+                        low:[],
+                        high:[],
+                        any:[],
+                        done:[]
+                    }
 
-        axios.get(`${link}/tasks`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}})
-        .then(data =>{
-            //TODO how do i work with this data?
-            console.log(data);
-        })
-        .catch(e => {
-            console.log("THERE WAS AN ERROR" + e)
-        })
+                    
+
+                    for(let i = 0; i < tasks.length; i++){
+                        if (tasks[i].urgency == null){
+                            //! testing push toall 
+                            newState[MAPPER[1]].push(tasks[i])
+                            continue;
+                        }
+                        newState[MAPPER[tasks[i].urgency]].push(tasks[i])
+
+                        
+                    }
+
+
+                    console.log(newState);
+                    setState(newState);
+                    setLoaded(true);
+                })
+                .catch(e => {
+                    console.log("THERE WAS AN ERROR" + e)
+                })
+            }
+        }
+
+        getData();
+
+        
     }, [])
 
 
+    const [data, setData] = useState([])
 
-    const [state, setState] = useState({
-        items:getItems(10),
-        selected:getItems(5,10),
-        hehe:getItems(5,15)
-    });
+    useEffect( () => {
 
-    const [tasks, setTasks] = useState([]);
+        const update = async() => {
+            if(loaded && Object.keys(state).length > 0){
+            console.log("WE ARE UPDATED");
+            const link = import.meta.env.VITE_LINK
+
+            let data2 = []
+
+            const keys = ['low', 'high', 'any', 'done'];
+
+            keys.forEach((key, ind) => { 
+                if (state[key]) {
+                    state[key].forEach((task, taskIndex) =>{
+                        const urgency = task.urgency == null ? ind+1 : task.urgency;
+                        data2.push({task_id: task.task_id, urgency: urgency, index : taskIndex});
+                    })
+                }
+            })
+
+            await axios.put(`${link}/tasks`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
+            }
+            
+        }
+        update();
+    }, [state])
+
+
+    // const [state, setState] = useState({
+    //     items:getItems(10),
+    //     selected:getItems(5,10),
+    //     hehe:getItems(5,15)
+    // });
+
     const id2List = {
         //ids for two lists
-        droppable: 'items',
-        droppable2: 'selected',
-        droppable3: "hehe"
+        droppable: 'low',
+        droppable2: 'high',
+        droppable3: "any"
     };
 
     // this grabs the associated list in state
@@ -145,21 +220,18 @@ const Item = () =>{
 
             let newState= {};
             if (source.droppableId === 'droppable') {
-                newState = {...state, items: items };
+                newState = {...state, low: items };
             }
             //now state only updates the second one
             if (source.droppableId === 'droppable2') {
-                newState = {...state, selected: items };
+                newState = {...state, high: items };
             }
 
             if (source.droppableId == 'droppable3') {
-                newState = {...state, hehe:items}
+                newState = {...state, any:items}
             }
             
             //will update with state
-
-            console.log("STATET IS");
-            console.log(state);
             setState(newState);
         } else {
             const result = move(
@@ -172,20 +244,19 @@ const Item = () =>{
             );
 
             setState({
-                items: result.items,
-                selected: result.selected,
-                hehe: result.hehe
+                low: result.low,
+                high: result.high,
+                any: result.any
             });
         }
     };
 
 
-    console.log(state);
     return (
         <DragDropContext onDragEnd={onDragEnd}>
-            <Droppy id="droppable"state = {state.items}/>
-            <Droppy id="droppable2" state={state.selected}/>
-            <Droppy id="droppable3" state={state.hehe}/>
+            <Droppy id="droppable"  state={state.low || []}/>
+            <Droppy id="droppable2" state={state.high || []}/>
+            <Droppy id="droppable3" state={state.any || []}/>
             {/* <Droppy /> */}
         </DragDropContext>
     )

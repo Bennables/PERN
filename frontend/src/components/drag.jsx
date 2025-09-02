@@ -46,14 +46,15 @@ const Droppy = (props) => {
         <div>
             <Droppable droppableId={props.id}>
             {(provided, snapshot) => (
+
                 <div
                     ref={provided.innerRef}
                     style={getListStyle(snapshot.isDraggingOver)}>
                     
                     {props.state.map((item, index) => (
                         <Draggable
-                            key={item.id}
-                            draggableId={item.id}
+                            key={item.task_id}
+                            draggableId={item.task_id.toString()}
                             index={index}>
                             {(provided, snapshot) => (
                                 <div
@@ -64,7 +65,7 @@ const Droppy = (props) => {
                                         snapshot.isDragging,
                                         provided.draggableProps.style
                                     )}>
-                                    {item.content}
+                                    {item.task_name}
                                 </div>
                             )}
                         </Draggable>

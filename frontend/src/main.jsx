@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import "./main.css";
 import Register from './pages/Register';
 import Personal from './pages/Personal';
-import Item from './pages/Dragger';
+import Item from './components/Dragger';
 
 
 

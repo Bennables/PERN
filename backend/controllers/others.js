@@ -9,7 +9,7 @@ const getTasks = async(req, res) =>{
     const user = req.user;
 
     const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
-    const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1", [user_id])).rows
+    const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind", [user_id])).rows
     console.log(tasks);
 
 
