@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 // Import controllers
 import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks } from './controllers/others.js';
-import { verifyToken } from './helpers/helpers.js';
+import { verifyToken, getUserID } from './helpers/helpers.js';
 import connection from './helpers/connect.js';
 
 const app = express();
@@ -56,6 +56,37 @@ const getTeamTasks = async(req, res) =>{
 }
 
 app.get("/team", getTeamTasks);
+
+
+const createTask = async (req, res) =>{
+    const scope = req.body.scope;
+    const taskName = req.body.name;
+
+    if (scope == "personal"){
+        const id = getUserID(req.user);
+        const result = await connection.query(
+            "INSERT INTO tasks (owner_id, task_name, urgency, ind) VALUES ($1, $2, $3, $4) RETURNING *", 
+            [user_id, taskName, 1, 0] // Default to low priority (1) and index 0
+        );
+    }
+    else{
+        const id = getUserOrgID(req.user);
+
+        if (!org_id) {
+            return res.status(400).send({"message": "User is not part of any organization"});
+        }
+        
+        // Insert team task
+        const result = await connection.query(
+            "INSERT INTO tasks (task_name, urgency, ind, org_id) VALUES ($1, $2, $3, $4, $5) RETURNING *", 
+            [ taskName, 1, 0,id] // Default to low priority (1) and index 0
+        );
+    }
+    
+    
+}
+
+app.post("/create", createTask)
 
 
 

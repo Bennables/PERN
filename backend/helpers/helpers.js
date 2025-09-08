@@ -15,6 +15,15 @@ const createToken = async (user) =>{
 }
 
 
+const getUserID = async(user) => { 
+    return (await connection.query("SELECT id FROM users WHERE username = $1", [user])).rows[0].ID
+}
+
+const getUserOrgID = async(user) => { 
+    return (await connection.query("SELECT org_id FROM users WHERE username = $1", [user])).rows[0].org_id
+}
+
+
 const verifyToken = async (req, res, next) => {
     // console.log(req.headers);
     console.log('verifying token');
@@ -75,4 +84,4 @@ const refreshTokens = async (refreshToken) =>{
 }
 
 
-export {createToken, verifyToken, refreshTokens};
+export {createToken, getUserOrgID, getUserID, verifyToken, refreshTokens};
