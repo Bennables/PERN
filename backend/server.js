@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 // Import controllers
 import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks } from './controllers/others.js';
-import { verifyToken, getUserID } from './helpers/helpers.js';
+import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
 import connection from './helpers/connect.js';
 
 const app = express();
@@ -44,12 +44,19 @@ app.put("/tasks", updateTasks)
 
 
 const getTeamTasks = async(req, res) =>{
-    const org_id = parseInt((await connection.query("SELECT org_id FROM users WHERE username=$1", [req.user])).rows[0].org_id);
+    // Get user's organization through org_members table
+    const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
+    const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id=$1", [user_id]);
+    
+    if (org_result.rows.length === 0) {
+        return res.status(400).send({"message": "User is not part of any organization"});
+    }
+    
+    const org_id = org_result.rows[0].org_id;
     console.log(org_id)
     console.log("THE ORG ID IS: " + org_id);
 
-
-    const teamTasks = await connection.query("SELECT * FROM tasks WHERE org_id = $1 ORDER BY urgency, ind", [org_id]);
+    const teamTasks = await connection.query("SELECT * FROM tasks WHERE org_id = $1 ORDER BY urgency", [org_id]);
     // console.log(teamTasks)
 
     res.status(200).send({"message": "success", "tasks": teamTasks.rows})
@@ -59,31 +66,48 @@ app.get("/team", getTeamTasks);
 
 
 const createTask = async (req, res) =>{
-    const scope = req.body.scope;
-    const taskName = req.body.name;
+    try {
+        const scope = req.body.scope;
+        const taskName = req.body.name;
 
-    if (scope == "personal"){
-        const id = getUserID(req.user);
-        const result = await connection.query(
-            "INSERT INTO tasks (owner_id, task_name, urgency, ind) VALUES ($1, $2, $3, $4) RETURNING *", 
-            [user_id, taskName, 1, 0] // Default to low priority (1) and index 0
-        );
-    }
-    else{
-        const id = getUserOrgID(req.user);
-
-        if (!org_id) {
-            return res.status(400).send({"message": "User is not part of any organization"});
+        if (scope == "personal"){
+            const user_id = await getUserID(req.user);
+            const result = await connection.query(
+                "INSERT INTO tasks (owner_id, task_name, urgency) VALUES ($1, $2, $3) RETURNING *", 
+                [user_id, taskName, 1] // Default to low priority (1)
+            );
+            
+            // Also create ordering entry for the user
+            await connection.query(
+                "INSERT INTO ordering (user_id, task_id, ind) VALUES ($1, $2, $3)", 
+                [user_id, result.rows[0].id, 0] // Default index 0
+            );
+            
+            res.status(201).send({"message": "Personal task created successfully", "task": result.rows[0]});
         }
-        
-        // Insert team task
-        const result = await connection.query(
-            "INSERT INTO tasks (task_name, urgency, ind, org_id) VALUES ($1, $2, $3, $4, $5) RETURNING *", 
-            [ taskName, 1, 0,id] // Default to low priority (1) and index 0
-        );
+        else{
+            // Get user's org through org_members table
+            const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
+            const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id=$1", [user_id]);
+            
+            if (org_result.rows.length === 0) {
+                return res.status(400).send({"message": "User is not part of any organization"});
+            }
+            
+            const org_id = org_result.rows[0].org_id;
+            
+            // Insert team task
+            const result = await connection.query(
+                "INSERT INTO tasks (org_id, task_name, urgency) VALUES ($1, $2, $3) RETURNING *", 
+                [org_id, taskName, 1] // Default to low priority (1)
+            );
+            
+            res.status(201).send({"message": "Team task created successfully", "task": result.rows[0]});
+        }
+    } catch (error) {
+        console.log("Error creating task:", error);
+        res.status(500).send({"message": "Failed to create task", "error": error.message});
     }
-    
-    
 }
 
 app.post("/create", createTask)

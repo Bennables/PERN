@@ -16,11 +16,13 @@ const createToken = async (user) =>{
 
 
 const getUserID = async(user) => { 
-    return (await connection.query("SELECT id FROM users WHERE username = $1", [user])).rows[0].ID
+    return (await connection.query("SELECT ID FROM users WHERE username = $1", [user])).rows[0].id
 }
 
 const getUserOrgID = async(user) => { 
-    return (await connection.query("SELECT org_id FROM users WHERE username = $1", [user])).rows[0].org_id
+    const user_id = (await connection.query("SELECT ID FROM users WHERE username = $1", [user])).rows[0].id;
+    const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id = $1", [user_id]);
+    return org_result.rows.length > 0 ? org_result.rows[0].org_id : null;
 }
 
 

@@ -8,8 +8,12 @@ const connect = async(req, res) => {
 const getTasks = async(req, res) =>{
     const user = req.user;
 
-    const user_id = (await connection.query("SELECT id FROM users where username=$1", [user])).rows[0].id;
-    const tasks = (await connection.query("SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind", [user_id])).rows
+    const user_id = (await connection.query("SELECT ID FROM users where username=$1", [user])).rows[0].id;
+
+    /// this needs to be changed 
+    // SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind
+    // select task_id from order where user_id = $1 ORDER BY ind;
+    const tasks = (await connection.query("SELECT * FROM ordering INNER JOIN tasks ON tasks.ID = ordering.task_id WHERE ordering.user_id=$1 ORDER BY urgency, ind", [user_id])).rows
     // console.log(tasks);
 
     res.status(200).send({"message": "success", "tasks": tasks})
@@ -58,30 +62,39 @@ const updateTasks = async(req, res) => {
         let ind = 0
 
 
-        // console.log(info);
-        let queryStr = "UPDATE tasks SET urgency = CASE";
+        // First update urgency in tasks table
+        let urgencyData = [];
+        let urgencyInd = 0;
+        let urgencyQueryStr = "UPDATE tasks SET urgency = CASE";
 
         for(let i = 0; i < req.body.length ; ++i){
-            data.push(req.body[i].task_id)
-            data.push(req.body[i].urgency)
-            queryStr += ` WHEN task_id = $${++ind} THEN $${++ind}`
+            urgencyData.push(req.body[i].task_id)
+            urgencyData.push(req.body[i].urgency)
+            urgencyQueryStr += ` WHEN ID = $${++urgencyInd} THEN $${++urgencyInd}`
         }
-        queryStr += " ELSE urgency END, ind = CASE"
+        urgencyData.push(user_id) 
+        urgencyQueryStr += ` ELSE urgency END WHERE owner_id = $${++urgencyInd};`
+
+        // Then update ind in ordering table
+        let orderingData = [];
+        let orderingInd = 0;
+        let orderingQueryStr = "UPDATE ordering SET ind = CASE";
+
         for(let i = 0; i < req.body.length ; ++i){
-            data.push(req.body[i].task_id)
-            data.push(req.body[i].index)
-            queryStr += ` WHEN task_id = $${++ind} THEN $${++ind}`
-
+            orderingData.push(req.body[i].task_id)
+            orderingData.push(req.body[i].index)
+            orderingQueryStr += ` WHEN task_id = $${++orderingInd} THEN $${++orderingInd}`
         }
-        data.push(user_id) 
-        queryStr += ` ELSE ind END WHERE owner_id = $${++ind};`
+        orderingData.push(user_id) 
+        orderingQueryStr += ` ELSE ind END WHERE user_id = $${++orderingInd};`
 
-
-        const result = await connection.query(queryStr, data);
-        // console.log(result)
-
-        // console.log(queryStr)
-        // console.log(data)
+        // Execute both queries
+        await connection.query(urgencyQueryStr, urgencyData);
+        await connection.query(orderingQueryStr, orderingData);
+        // console.log(urgencyQueryStr)
+        // console.log(urgencyData)
+        // console.log(orderingQueryStr)
+        // console.log(orderingData)
 
         res.status(200).send({"message" : "Tasks updated successfully"})
     }
