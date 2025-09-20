@@ -1,7 +1,9 @@
 CREATE TABLE users(
     ID SERIAL PRIMARY KEY ,
     username VARCHAR(32) UNIQUE,
-    pwHashed VARCHAR(128)
+    pwHashed VARCHAR(128),
+    lvl int,
+    currXp int
 );
 
 CREATE TABLE org(
@@ -36,12 +38,23 @@ CREATE TABLE ordering (
     PRIMARY KEY (user_id, task_id)
 );
 
+CREATE TABLE levels(
+    lvl int,
+    lvlXP int,
+);
 
-
-
-
-
-
-
+INSERT INTO levels (lvl, lvlXP) VALUES
+    (1, 10),
+    (2, 20),
+    (3, 35),
+    (4, 55),
+    (5, 85),
+    (6, 120),
+    (7, 160),
+    (8, 200),
+    (9, 250),
+    (10, 320),
+    (11, 380),
+    (12, 500);
 
 
