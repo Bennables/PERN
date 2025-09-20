@@ -62,6 +62,15 @@ const updateTasks = async(req, res) => {
         let ind = 0
 
 
+        // Check if there are tasks to update
+        if (!req.body || req.body.length === 0) {
+            console.log("No tasks to update");
+            return res.status(400).send({"message": "No tasks provided for update"});
+        }
+
+        console.log("Updating tasks for user_id:", user_id);
+        console.log("Tasks to update:", req.body.length);
+
         // First update urgency in tasks table
         let urgencyData = [];
         let urgencyInd = 0;
@@ -87,6 +96,9 @@ const updateTasks = async(req, res) => {
         }
         orderingData.push(user_id) 
         orderingQueryStr += ` ELSE ind END WHERE user_id = $${++orderingInd};`
+
+        console.log("Urgency query:", urgencyQueryStr);
+        console.log("Ordering query:", orderingQueryStr);
 
         // Execute both queries
         await connection.query(urgencyQueryStr, urgencyData);

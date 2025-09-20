@@ -248,10 +248,12 @@ const Item = (props) =>{
                 if (state[key]) {
                     state[key].forEach((task, taskIndex) =>{
                         const urgency = task.urgency == null ? ind+1 : task.urgency;
-                        data2.push({task_id: task.ID, urgency: urgency, index : taskIndex});
+                        data2.push({task_id: task.task_id, urgency: urgency, index : taskIndex});
                     })
                 }
             })
+
+            console.log("Sending update data:", data2);
 
             axios.put(`${link}/tasks`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
             .then(res =>{
