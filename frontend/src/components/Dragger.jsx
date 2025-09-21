@@ -38,12 +38,25 @@ const move = (source, destination, droppableSource, droppableDestination, state,
 
     //remove and add in
     const [removed] = sourceClone.splice(droppableSource.index, 1);
+    
+    //Update Urgency value
+    const urgencyMap = {
+        low: 1,
+        high: 2,
+        any: 3,
+        done: 4
+    };
+    const destListName = id2List[droppableDestination.droppableId];
+    removed.urgency = urgencyMap[destListName];
+
+
+    // Add to destination
     destClone.splice(droppableDestination.index, 0, removed);
 
-    //updating values
-    const result = {...state};
+    // Update state
+    const result = { ...state };
     result[id2List[droppableSource.droppableId]] = sourceClone;
-    result[id2List[droppableDestination.droppableId]] = destClone;
+    result[destListName] = destClone;
 
     return result;
 };
@@ -347,7 +360,7 @@ const Item = (props) =>{
             const items = reorder(
                 getList(source.droppableId),
                 source.index,
-                destination.index
+                destination.indexf
             );
 
             //! this part only works with components (extends component)

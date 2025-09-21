@@ -32,7 +32,32 @@ const Create = () => {
             const response = await axios.post(`${link}/create`, data, {
                 headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}, 
                 withCredentials: true
-            });
+            }).catch(async err => {
+                    console.log('error message is: ' + err.response.data.message)
+                    if (err.response && err.response.data && err.response.data.message == 'token expired'){
+                        //get here
+                        console.log("refreshing the token")
+                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
+                            .then(res =>{
+                                console.log(res);   
+                                console.log("WE're getting here successfully" ) 
+                                sessionStorage.setItem("accessToken", res.data.token)   
+                            })
+                            .catch(err => { 
+                                console.log(err);
+                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
+                                    sessionStorage.removeItem('accessToken')
+                                    nav(`/login`);
+                                }
+                            })
+                        console.log("DONE")
+                    }
+
+                    if (err.response && err.response.data && err.response.data.message == 'bad token'){
+                        sessionStorage.removeItem('accessToken')
+                        nav(`/login`);
+                    }
+                })
             
             console.log("Task created successfully:", response.data);
             alert("Task created successfully!");
