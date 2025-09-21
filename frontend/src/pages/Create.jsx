@@ -13,10 +13,10 @@ const Create = () => {
     const link = import.meta.env.VITE_LINK;
     const [name, setName] = useState("")
     const [scope, setScope] = useState("personal");
-    const [month, setMonth] = useState(0);
+    const [month, setMonth] = useState(1);
     const [day , setDay] = useState(1); //0-12 month
     const [year, setYear] = useState(2025);
-    const [totalDays, setTotalDays] = useState(0);
+    const [urgency, setUrgency] = useState(1);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,7 +26,7 @@ const Create = () => {
             return;
         }
 
-        let data = {name: name, scope: scope == 'personal' ? "personal": "team"};
+        let data = {name: name, scope: scope, deadline: `${year}-${month}-${day}`, urgency: urgency};
 
         try {
             const response = await axios.post(`${link}/create`, data, {
@@ -106,6 +106,12 @@ const Create = () => {
 
             <select id="year" name="year" onChange={(e) => setYear(e.target.value)}>
                 {countYears()}
+            </select>
+
+            <select id="urgency" name="urgency" onChange={(e) => setUrgency(e.target.value)}>
+                <option value="3">SUPER HIGH</option>
+                <option value="2">Medium</option>
+                <option value="1">Low</option>
             </select>
 
             <button onClick={(e) => handleSubmit(e)}>submit</button>

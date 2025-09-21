@@ -47,6 +47,7 @@ const new_refresh = async(req, res) =>{
 }
 
 const updateTasks = async(req, res) => {
+    // updates the order of tasks.
     try{
         const data = []
 
@@ -60,8 +61,6 @@ const updateTasks = async(req, res) => {
         
 
         let ind = 0
-
-
         // Check if there are tasks to update
         if (!req.body || req.body.length === 0) {
             console.log("No tasks to update");
@@ -116,6 +115,5 @@ const updateTasks = async(req, res) => {
     }
     
 }
-
 
 export { connect, getTasks, getUsers, new_refresh, updateTasks }

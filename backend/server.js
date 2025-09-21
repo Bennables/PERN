@@ -69,12 +69,14 @@ const createTask = async (req, res) =>{
     try {
         const scope = req.body.scope;
         const taskName = req.body.name;
+        const deadline = req.body.deadline || null;
+        const urgency = req.body.urgency || 1; //may need to parseint()
 
         if (scope == "personal"){
             const user_id = await getUserID(req.user);
             const result = await connection.query(
-                "INSERT INTO tasks (owner_id, task_name, urgency) VALUES ($1, $2, $3) RETURNING *", 
-                [user_id, taskName, 1] // Default to low priority (1)
+                "INSERT INTO tasks (owner_id, task_name, deadline, urgency) VALUES ($1, $2, $3, $4) RETURNING *", 
+                [user_id, taskName, deadline, urgency] // Default to low priority (1)
             );
             
             // Also create ordering entry for the user
@@ -98,8 +100,8 @@ const createTask = async (req, res) =>{
             
             // Insert team task
             const result = await connection.query(
-                "INSERT INTO tasks (org_id, task_name, urgency) VALUES ($1, $2, $3) RETURNING *", 
-                [org_id, taskName, 1] // Default to low priority (1)
+                "INSERT INTO tasks (org_id, task_name, deadline, urgency) VALUES ($1, $2, $3) RETURNING *", 
+                [org_id, taskName, deadline, urgency] // Default to low priority (1)
             );
             
             res.status(201).send({"message": "Team task created successfully", "task": result.rows[0]});
