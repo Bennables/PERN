@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import redisClient from "redis"
+import { redisClient }from "./redis.js"
 import connection from './connect.js';
 import {v4 as uuidv4} from 'uuid';
 
@@ -9,7 +9,7 @@ const createToken = async (user) =>{
     const refreshToken = jwt.sign({user: user}, process.env.REFRESH_SECRET_KEY, {expiresIn: "7d"});
 
     // console.log("The JWT is: " + token)
-    await redisClient.sAdd("refreshTokens", refreshToken)
+    await redisClient.SADD("refreshTokens", refreshToken)
 
     return [token, refreshToken];
 }

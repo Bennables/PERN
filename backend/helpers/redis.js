@@ -12,6 +12,8 @@ redisClient.on('ready', ()=>{
 })
 await redisClient.connect();
 
+export {redisClient};
+
 
 
 

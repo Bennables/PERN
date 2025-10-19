@@ -4,7 +4,7 @@ const connection = new Pool({
     host: 'localhost',
     user: 'postgres',
     password: 'postgres',
-    database: 'postgres',
+    database: 'pern',
     port: 5432
 })
 
