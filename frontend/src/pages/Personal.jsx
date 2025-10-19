@@ -62,13 +62,6 @@ const Personal = () => {
             
 
     }, [])
-    
-
-    const logout = () => {
-        console.log("clear clicked")
-        axios.get(`${link}/clear`, {headers: {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`}}, {withCredentials: true})
-    }
-
 
     
     return(

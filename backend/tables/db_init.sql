@@ -40,7 +40,7 @@ CREATE TABLE ordering (
 
 CREATE TABLE levels(
     lvl int,
-    lvlXP int,
+    lvlXP int
 );
 
 INSERT INTO levels (lvl, lvlXP) VALUES
