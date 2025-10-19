@@ -33,8 +33,7 @@ const register = async (req,res) =>{
     console.log("NEW REGISTRATION");
     console.log(req.body);
     const username = req.body.username;
-    const password = req.body.password;
-    console.log(username, password);
+    const password = req.body.password.toString();
 
     //check for existing username
     const existing = await connection.query("SELECT * FROM users WHERE username=$1", [username])
