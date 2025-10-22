@@ -14,7 +14,3 @@ await redisClient.connect();
 
 export {redisClient};
 
-
-
-
-

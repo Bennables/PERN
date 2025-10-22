@@ -10,12 +10,6 @@ import { useNavigate } from 'react-router';
 // fake data generator
 //TODO put data from db into here
 // reqs: each data will have a location(list), an index(in list), and content
-const getItems = (count, offset = 0) =>
-    Array.from({ length: count }, (v, k) => k).map(k => ({
-        id: `item-${k + offset}`,
-        content: `item ${k + offset}`
-    }));
-
 
 /**
  * Moves an item from one list to another list.
