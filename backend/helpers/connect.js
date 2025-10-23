@@ -4,7 +4,7 @@ const connection = new Pool({
     host: 'localhost',
     user: 'postgres',
     password: 'postgres',
-    database: 'pern',
+    database: 'squadwork',
     port: 5432
 })
 
