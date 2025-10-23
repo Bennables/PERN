@@ -120,11 +120,6 @@ const Item = (props) =>{
         4: "done",
     }
 
-    //! working hererererererer
-
-    //!fdsfsdfsdfsdfdsfdsfdsf
-    //!d
-    //!fsfadsfsdafsdafsadfdsaf
     useEffect( () => { 
         //need to make requests here    
         const getData =  async() =>{
@@ -425,7 +420,7 @@ const Item = (props) =>{
                                 onClick={() => setError(null)}
                                 className="ml-2 text-red-500 hover:text-red-700"
                             >
-                                ×
+                                
                             </button>
                         </div>
                     </div>
@@ -449,7 +444,11 @@ const Item = (props) =>{
                     </div>
                 </div>
             </div>
-
+            <div className="flex justify-end mr-53">
+                <button className="border-0 bg-blue-100 font-serif font-bold text-blue-700 mt-6 p-5 rounded-xl" onClick={() => nav('/create')}>
+                    add task+ 
+                </button>
+            </div>
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <DragDropContext onDragEnd={onDragEnd}>
