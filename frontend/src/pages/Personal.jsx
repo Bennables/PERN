@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import Item from "../components/Dragger";
+import Logout from "../components/logout";
 
 
 
@@ -66,6 +67,7 @@ const Personal = () => {
     
     return(
         <div>
+            <Logout/>
             <Item dest={"tasks"}/>
         </div>
     )

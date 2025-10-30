@@ -28,10 +28,9 @@ const getUserOrgID = async(user) => {
 
 const verifyToken = async (req, res, next) => {
     // console.log(req.headers);
-    console.log('verifying token');
-    const token = req.headers['authorization'].split(' ')[1]
-
     try{
+        console.log('verifying token');
+        const token = req.headers['authorization'].split(' ')[1]
         const jwtVerified = jwt.verify(token, process.env.JWT_SECRET_KEY);
         /* the format of jwtverified is a json
         {
@@ -55,6 +54,10 @@ const verifyToken = async (req, res, next) => {
         if (e.name == 'TokenExpiredError'){
             // console.log(e);
             return res.status(401).send({"message" : 'token expired'})
+        }
+
+        if (!token){
+            print("token is not defined")
         }
         
         // console.log(e)

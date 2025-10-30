@@ -21,7 +21,6 @@ const login = async(req, res) =>{
     if (verified){
         const tokens = await createToken(username);
         console.log("THE TOKESN ARE HERE")
-        console.log()
         res.cookie("refreshToken", tokens[1], {sameSite: 'lax', httpOnly: true})
         res.status(200).send({"message": "correct", "token": tokens[0]});
         console.log(tokens);

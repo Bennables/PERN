@@ -19,7 +19,8 @@ const router = createBrowserRouter([
   {path: "/team", element: <Team/>},
   {path: "/personal", element: <Personal/>},
   {path:"/drag", element: <Item/>},
-  {path:"/create", element: <Create/>}
+  {path:"/create", element: <Create/>},
+  {path:"/logout"}
 
 ])
 

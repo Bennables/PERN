@@ -8,6 +8,7 @@ import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks } from './controllers/others.js';
 import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
 import connection from './helpers/connect.js';
+import { redisClient } from './helpers/redis.js';
 
 const app = express();
 
@@ -30,6 +31,25 @@ app.get("/clear", (req, res) => {
     res.status(200).send({"message": "cookies have been cleared"});
 });
 
+
+
+const logout = async (req, res) => {
+    console.log(req.body);
+    console.log("LOGGED OUT")
+    // console.log(req.body.token)
+    console.log("REFREH IS" + req.cookies.refreshToken)
+
+    if (!redisClient.isOpen) await redisClient.connect();
+    // const result = await redisClient.sRem("refreshTokens", req.body.token);
+    const result = await redisClient.sRem("refreshTokens", req.cookies.refreshToken);
+
+    const tokesn = await redisClient.sMembers("refreshTokens");
+
+    console.log("removed " + result)
+    console.log(tokesn)
+}
+
+app.post("/logout", logout)
 // ===== PROTECTED ROUTES (Authentication Required) =====
 // Apply verifyToken middleware to all routes below
 app.use(verifyToken);
@@ -112,7 +132,9 @@ const createTask = async (req, res) =>{
     }
 }
 
+
 app.post("/create", createTask)
+
 
 
 
