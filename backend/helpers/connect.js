@@ -1,5 +1,7 @@
 import {Pool} from 'pg';
 
+import {drizzle} from 'drizzle-orm/node-postgres';
+
 const connection = new Pool({
     host: 'localhost',
     user: 'postgres',
@@ -8,6 +10,8 @@ const connection = new Pool({
     port: 5432
 })
 
+//drizzle expects an existing connection
+const db = drizzle(connection);
 
 
-export default connection;
+export {connection, db};
