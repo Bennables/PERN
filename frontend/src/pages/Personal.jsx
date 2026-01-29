@@ -1,6 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Item from "../components/Dragger";
 import Logout from "../components/logout";
@@ -11,64 +10,90 @@ import Logout from "../components/logout";
 const Personal = () => { 
     const nav = useNavigate();
     const link = import.meta.env.VITE_LINK
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState([])
+    const [hasOrg, setHasOrg] = useState(false);
 
-    
-    
     useEffect(() => {
-
-        const func = async () => {
-            try{
-                //get data
-                axios.get(`${link}/personal/`, {headers: {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`}}).then(
-                    res => {
-                        console.log('loading successful');
-                        console.log(res);
-                    }
-                ).catch(async err => {
-                    console.log('error message is: ' + err.response.data.message)
-                    if (err.response && err.response.data && err.response.data.message == 'token expired'){
-                        //get here
-                        console.log("refreshing the token")
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log(res);   
-                                console.log("WE're getting here successfully" ) 
-                                sessionStorage.setItem("accessToken", res.data.token)   
-                            })
-                            .catch(err => { 
-                                console.log(err);
-                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken')
-                                    nav(`/login`);
-                                }
-                            })
-                        console.log("DONE")
-                    }
-
-                    if (err.response && err.response.data && err.response.data.message == 'bad token'){
-                        sessionStorage.removeItem('accessToken')
-                        nav(`/login`);
-                    }
-                })
-                setData(tasks);
-                console.log(tasks);
+        const checkOrg = async () => {
+            try {
+                await axios.get(`${link}/team`, {
+                    headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken")}` },
+                    withCredentials: true
+                });
+                setHasOrg(true);
+            } catch (err) {
+                const msg = err?.response?.data?.message;
+                if (err?.response?.status === 400 && msg === "User is not part of any organization") {
+                    setHasOrg(false);
+                } else if (err?.response?.status === 401 || msg === "token expired") {
+                    sessionStorage.removeItem("accessToken");
+                    nav("/login");
+                }
             }
-            catch{ 
-                
-            }
-            }
-            func();
-            
+        };
 
-    }, [])
+        checkOrg();
+    }, [link, nav])
 
     
     return(
-        <div>
-            <Logout/>
-            <Item dest={"tasks"}/>
+        <div className="min-h-screen bg-slate-50">
+            <div className="bg-white border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Your tasks</h1>
+                        <p className="text-sm text-slate-600">
+                            Personal + Organization (if you have one)
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <Logout/>
+                    </div>
+                </div>
+            </div>
+
+            {!hasOrg && (
+                <div className="max-w-3xl mx-auto mt-6 px-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <h2 className="text-amber-800 font-semibold mb-1">No organization tasks yet</h2>
+                        <p className="text-amber-700 text-sm">
+                            Create an organization (or select one on the org screen) to see org tasks here.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-10">
+                {/* Personal tasks */}
+                <section>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-slate-900">Personal</h2>
+                        <button
+                            className="px-3 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
+                            onClick={() => nav("/create")}
+                        >
+                            Add task
+                        </button>
+                    </div>
+                    <Item dest={"tasks"} compact />
+                </section>
+
+                {/* Org tasks */}
+                {hasOrg && (
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-slate-900">Organization</h2>
+                            <button
+                                className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 hover:bg-slate-50"
+                                onClick={() => nav("/create")}
+                            >
+                                Add task
+                            </button>
+                        </div>
+                        <Item dest={"team"} compact />
+                    </section>
+                )}
+            </div>
         </div>
     )
 }

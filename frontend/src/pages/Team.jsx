@@ -1,82 +1,69 @@
 import axios from "axios";
-import { useState } from "react";
-import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router";
 import Item from "../components/Dragger";
 
-
-
-
-const Personal = () => { 
+const Team = () => { 
     const nav = useNavigate();
-    const link = import.meta.env.VITE_LINK
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState([])
+    const link = import.meta.env.VITE_LINK;
+    const [hasOrg, setHasOrg] = useState(true);
 
-    
-    
     useEffect(() => {
-
-        const func = async () => {
-            try{
-                //get data
-                axios.get(`${link}/personal/`, {headers: {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`}}).then(
-                    res => {
-                        console.log('loading successful');
-                        console.log(res);
-                    }
-                ).catch(async err => {
-                    console.log('error message is: ' + err.response.data.message)
-                    if (err.response && err.response.data && err.response.data.message == 'token expired'){
-                        //get here
-                        console.log("refreshing the token")
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log(res);   
-                                console.log("WE're getting here successfully" ) 
-                                sessionStorage.setItem("accessToken", res.data.token)   
-                            })
-                            .catch(err => { 
-                                console.log(err);
-                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken')
-                                    nav(`/login`);
-                                }
-                            })
-                        console.log("DONE")
-                    }
-
-                    if (err.response && err.response.data && err.response.data.message == 'bad token'){
-                        sessionStorage.removeItem('accessToken')
-                        nav(`/login`);
-                    }
-                })
-                setData(tasks);
-                console.log(tasks);
+        const checkOrg = async () => {
+            try {
+                await axios.get(
+                    `${link}/team`,
+                    { headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken")}` } }
+                );
+                setHasOrg(true);
+            } catch (err) {
+                if (err.response && err.response.status === 400 && err.response.data?.message === "User is not part of any organization") {
+                    setHasOrg(false);
+                } else if (err.response && err.response.status === 401) {
+                    sessionStorage.removeItem("accessToken");
+                    nav("/login");
+                }
             }
-            catch{ 
-                
-            }
-            }
-            func();
-            
+        };
 
-    }, [])
-    
+        checkOrg();
+    }, [link, nav]);
 
-    const logout = () => {
-        console.log("clear clicked")
-        axios.get(`${link}/clear`, {headers: {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`}}, {withCredentials: true})
-    }
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="bg-white shadow-sm border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900">Team Board</h1>
+                        <p className="text-slate-600 mt-1">
+                            Organize work across your organization.
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Link
+                            to="/org/create"
+                            className="inline-flex items-center px-4 py-2 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-semibold transition-colors duration-200"
+                        >
+                            Create organization
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
+            {!hasOrg && (
+                <div className="max-w-3xl mx-auto mt-8 px-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <h2 className="text-amber-800 font-semibold mb-1">No organization yet</h2>
+                        <p className="text-amber-700 text-sm">
+                            You&apos;re not part of any organization. Create one to start managing team tasks.
+                        </p>
+                    </div>
+                </div>
+            )}
 
-    
-    return(
-        <div>
             <Item dest={"team"}/>
         </div>
-    )
-}
+    );
+};
 
-
-export default Personal;
+export default Team;
