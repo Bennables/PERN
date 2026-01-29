@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-
+import "./Create.css";
 
 const monthList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', "Dec"]
 const mapMonth = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr' : 4, 'May':5, 'Jun':6, 'Jul':7, 'Aug':8, 'Sep':9, 'Oct':10, 'Nov':11, "Dec":12}
@@ -26,38 +26,54 @@ const Create = () => {
             return;
         }
 
-        let data = {name: name, scope: scope, deadline: `${year}-${month}-${day}`, urgency: urgency};
+        const orgId = sessionStorage.getItem("orgId");
+        if (scope === "team" && (!orgId || orgId === "null" || orgId === "undefined")) {
+            alert("No organization selected. Please pick your org first.");
+            nav("/org/find");
+            return;
+        }
+
+        let data = {
+            name: name,
+            scope: scope,
+            deadline: `${year}-${month}-${day}`,
+            urgency: urgency,
+            org_id: scope === "team" ? Number(orgId) : undefined
+        };
 
         try {
-            const response = await axios.post(`${link}/create`, data, {
-                headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}, 
-                withCredentials: true
-            }).catch(async err => {
-                    console.log('error message is: ' + err.response.data.message)
-                    if (err.response && err.response.data && err.response.data.message == 'token expired'){
-                        //get here
-                        console.log("refreshing the token")
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log(res);   
-                                console.log("WE're getting here successfully" ) 
-                                sessionStorage.setItem("accessToken", res.data.token)   
-                            })
-                            .catch(err => { 
-                                console.log(err);
-                                if (err.response && err.response.data && err.response.data.message == "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken')
-                                    nav(`/login`);
-                                }
-                            })
-                        console.log("DONE")
-                    }
+            const token = sessionStorage.getItem("accessToken");
 
-                    if (err.response && err.response.data && err.response.data.message == 'bad token'){
-                        sessionStorage.removeItem('accessToken')
-                        nav(`/login`);
-                    }
-                })
+            const makeRequest = () => axios.post(`${link}/create`, data, {
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true
+            });
+
+            let response;
+            try {
+                response = await makeRequest();
+            } catch (err) {
+                const message = err?.response?.data?.message;
+                console.log("error message is: " + (message || "(no message)"));
+
+                if (message === "token expired") {
+                    // refresh and retry once
+                    const refreshRes = await axios.get(`${link}/auth/refresh`, { withCredentials: true });
+                    sessionStorage.setItem("accessToken", refreshRes.data.token);
+
+                    const retryToken = sessionStorage.getItem("accessToken");
+                    response = await axios.post(`${link}/create`, data, {
+                        headers: { Authorization: `Bearer ${retryToken}` },
+                        withCredentials: true
+                    });
+                } else if (message === "bad token" || message === "token doesn't exist") {
+                    sessionStorage.removeItem("accessToken");
+                    nav("/login");
+                    return;
+                } else {
+                    throw err;
+                }
+            }
             
             console.log("Task created successfully:", response.data);
             alert("Task created successfully!");
@@ -93,7 +109,7 @@ const Create = () => {
         }
         const options = []
         for(let i = 1; i <= days; i++){
-            options.push(<option value={i}>{i}</option>)
+            options.push(<option key={i} value={i}>{i}</option>)
         }
         return options
     }
@@ -102,7 +118,7 @@ const Create = () => {
         const options = []
         const yearNum = new Date().getFullYear();
         for(let i = yearNum; i < yearNum + 10; i++){
-            options.push(<option value={i}>{i}</option>)
+            options.push(<option key={i} value={i}>{i}</option>)
         }
         return options;
     }
@@ -110,36 +126,91 @@ const Create = () => {
 
 
     return (
-        <div>
-            <input name="name" type="text" value= {name || "" } placeholder="choose a name" onChange={(e)=>setName(e.target.value)}></input>
-            <label for="scope">Task Type:</label>
-            <select id="scope" onChange={(e) => setScope(e.target.value)} name="scope">
-                <option value="personal">Personal</option>
-                <option value="team">Team</option>
-            </select>
+        <div className="create-container">
+            <div className="create-card">
+                <h1>Create New Task</h1>
+                
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group form-group-full">
+                        <label htmlFor="name">Task Name</label>
+                        <input 
+                            id="name"
+                            name="name" 
+                            type="text" 
+                            value={name || ""} 
+                            placeholder="Enter task name..." 
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </div>
 
-            <select id="month" onChange={(e) => setMonth(mapMonth[e.target.value])} name="month">
-                {monthList.map((month)=>(
-                    <option value={month}>{month}</option>
-                ))}
-            </select>
+                    <div className="form-group form-group-full">
+                        <label>Task Type</label>
+                        <div className="scope-group">
+                            <div className="scope-option">
+                                <input 
+                                    id="personal"
+                                    type="radio" 
+                                    name="scope" 
+                                    value="personal"
+                                    checked={scope === "personal"}
+                                    onChange={(e) => setScope(e.target.value)}
+                                />
+                                <label htmlFor="personal">Personal</label>
+                            </div>
+                            <div className="scope-option">
+                                <input 
+                                    id="team"
+                                    type="radio" 
+                                    name="scope" 
+                                    value="team"
+                                    checked={scope === "team"}
+                                    onChange={(e) => setScope(e.target.value)}
+                                />
+                                <label htmlFor="team">Team</label>
+                            </div>
+                        </div>
+                    </div>
 
-            <select id="day" name="day" onChange={(e) => setDay(e.target.value)}>
-                {countMonths()}
-            </select>
+                    <div className="date-section">
+                        <label>Deadline</label>
+                        <div className="form-row-three">
+                            <div className="form-group">
+                                <label htmlFor="month">Month</label>
+                                <select id="month" onChange={(e) => setMonth(mapMonth[e.target.value])} name="month">
+                                    {monthList.map((month)=>(
+                                        <option key={month} value={month}>{month}</option>
+                                    ))}
+                                </select>
+                            </div>
 
+                            <div className="form-group">
+                                <label htmlFor="day">Day</label>
+                                <select id="day" name="day" onChange={(e) => setDay(e.target.value)}>
+                                    {countMonths()}
+                                </select>
+                            </div>
 
-            <select id="year" name="year" onChange={(e) => setYear(e.target.value)}>
-                {countYears()}
-            </select>
+                            <div className="form-group">
+                                <label htmlFor="year">Year</label>
+                                <select id="year" name="year" onChange={(e) => setYear(e.target.value)}>
+                                    {countYears()}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-            <select id="urgency" name="urgency" onChange={(e) => setUrgency(e.target.value)}>
-                <option value="3">SUPER HIGH</option>
-                <option value="2">Medium</option>
-                <option value="1">Low</option>
-            </select>
+                    <div className="form-group form-group-full">
+                        <label htmlFor="urgency">Priority Level</label>
+                        <select id="urgency" name="urgency" onChange={(e) => setUrgency(e.target.value)}>
+                            <option value="3">🔥 Super High</option>
+                            <option value="2">📌 Medium</option>
+                            <option value="1">✓ Low</option>
+                        </select>
+                    </div>
 
-            <button onClick={(e) => handleSubmit(e)}>submit</button>
+                    <button type="submit" className="submit-button">Create Task</button>
+                </form>
+            </div>
         </div>
     )
 }

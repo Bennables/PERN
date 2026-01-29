@@ -1,0 +1,161 @@
+.create-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.create-card {
+    width: 100%;
+    max-width: 600px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+}
+
+.create-card h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-row-three {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.submit-button:active {
+    transform: translateY(0);
+}
+
+.scope-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.scope-option {
+    position: relative;
+}
+
+.scope-option input[type="radio"] {
+    display: none;
+}
+
+.scope-option label {
+    display: block;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: capitalize;
+    margin-bottom: 0;
+}
+
+.scope-option input[type="radio"]:checked + label {
+    border-color: #667eea;
+    background-color: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    font-weight: 700;
+}
+
+.date-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.date-section label {
+    display: block;
+    margin-bottom: 16px;
+    color: #667eea;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+@media (max-width: 600px) {
+    .create-card {
+        padding: 24px;
+    }
+
+    .form-row,
+    .form-row-three {
+        grid-template-columns: 1fr;
+    }
+
+    .scope-group {
+        grid-template-columns: 1fr 1fr;
+    }
+}

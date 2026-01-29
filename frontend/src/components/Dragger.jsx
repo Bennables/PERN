@@ -125,7 +125,10 @@ const Item = (props) =>{
         const getData =  async() =>{
             if (!loaded){
                 console.log("Dest is" + props.dest)
-                await axios.get(`${link}/${props.dest}`, {headers: {Authorization: `Bearer ${sessionStorage.accessToken}`}}, {withCredentials: true})
+                await axios.get(`${link}/${props.dest}`, {
+                    headers: {Authorization: `Bearer ${sessionStorage.accessToken}`},
+                    withCredentials: true
+                })
                 .then(res =>{
                     // Validate response data with short-circuiting
                     let tasks = res.data && res.data.tasks && Array.isArray(res.data.tasks) ? res.data.tasks : [];
@@ -145,22 +148,24 @@ const Item = (props) =>{
 
                     for(let i = 0; i < tasks.length; i++){
                         const task = tasks[i];
-                        if (!task || !task.task_id) {
+                        const taskId = task?.task_id ?? task?.id;
+                        if (!task || !taskId) {
                             console.warn("Invalid task data:", task);
                             continue;
                         }
+                        const normalizedTask = { ...task, task_id: taskId };
                         
-                        if (task.urgency == null){
-                            newState[MAPPER[1]].push(task);
+                        if (normalizedTask.urgency == null){
+                            newState[MAPPER[1]].push(normalizedTask);
                             continue;
                         }
                         
                         // Validate urgency value
-                        if (MAPPER[task.urgency]) {
-                            newState[MAPPER[task.urgency]].push(task);
+                        if (MAPPER[normalizedTask.urgency]) {
+                            newState[MAPPER[normalizedTask.urgency]].push(normalizedTask);
                         } else {
-                            console.warn("Invalid urgency value:", task.urgency);
-                            newState[MAPPER[1]].push(task); // Default to low priority
+                            console.warn("Invalid urgency value:", normalizedTask.urgency);
+                            newState[MAPPER[1]].push(normalizedTask); // Default to low priority
                         }
 
                         
@@ -238,7 +243,9 @@ const Item = (props) =>{
 
         const update = async() => {
 
-            if(loaded && Object.keys(state).length > 0){
+            if(!(loaded && Object.keys(state).length > 0)){
+                return;
+            }
             console.log("WE ARE UPDATED");
             const link = import.meta.env.VITE_LINK
 
@@ -250,14 +257,17 @@ const Item = (props) =>{
                 if (state[key]) {
                     state[key].forEach((task, taskIndex) =>{
                         const urgency = task.urgency == null ? ind+1 : task.urgency;
-                        data2.push({task_id: task.task_id, urgency: urgency, index : taskIndex});
+                        const taskId = task?.task_id ?? task?.id;
+                        if (!taskId) return;
+                        data2.push({task_id: taskId, urgency: urgency, index : taskIndex});
                     })
                 }
             })
 
             console.log("Sending update data:", data2);
+            const endpoint = props.dest === "team" ? "/team/tasks" : "/tasks";
 
-            axios.put(`${link}/tasks`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
+            axios.put(`${link}${endpoint}`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
             .then(res =>{
                 console.log(res);
                 }
@@ -315,8 +325,7 @@ const Item = (props) =>{
             )
             }
             
-        }
-        update();
+        update()
     }, [state])
 
 
@@ -394,7 +403,7 @@ const Item = (props) =>{
 
     if (!loaded) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+            <div className={`${props.compact ? "" : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100"} flex items-center justify-center`}>
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
                     <p className="text-slate-600 text-lg">Loading your tasks...</p>
@@ -408,11 +417,15 @@ const Item = (props) =>{
         );
     }
 
+    const wrapperClassName = props.compact
+        ? ""
+        : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100";
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className={wrapperClassName}>
             {/* Error Notification */}
             {error && (
-                <div className="fixed top-4 right-4 z-50 max-w-sm">
+                <div className={`${props.compact ? "" : "fixed top-4 right-4"} z-50 max-w-sm`}>
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
                         <div className="flex justify-between items-start">
                             <span className="text-sm">{error}</span>
@@ -426,31 +439,35 @@ const Item = (props) =>{
                     </div>
                 </div>
             )}
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-900">Task Board</h1>
-                            <p className="text-slate-600 mt-1">Organize your tasks by priority</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="bg-slate-100 px-3 py-1 rounded-full">
-                                <span className="text-sm font-medium text-slate-700">
-                                    {(state.low?.length || 0) + (state.high?.length || 0) + (state.any?.length || 0)} tasks
-                                </span>
+            {!props.compact && (
+                <>
+                    {/* Header */}
+                    <div className="bg-white shadow-sm border-b border-slate-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-slate-900">Task Board</h1>
+                                    <p className="text-slate-600 mt-1">Organize your tasks by priority</p>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    <div className="bg-slate-100 px-3 py-1 rounded-full">
+                                        <span className="text-sm font-medium text-slate-700">
+                                            {(state.low?.length || 0) + (state.high?.length || 0) + (state.any?.length || 0)} tasks
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div className="flex justify-end mr-53">
-                <button className="border-0 bg-blue-100 font-serif font-bold text-blue-700 mt-6 p-5 rounded-xl" onClick={() => nav('/create')}>
-                    add task+ 
-                </button>
-            </div>
+                    <div className="flex justify-end mr-53">
+                        <button className="border-0 bg-blue-100 font-serif font-bold text-blue-700 mt-6 p-5 rounded-xl" onClick={() => nav('/create')}>
+                            add task+ 
+                        </button>
+                    </div>
+                </>
+            )}
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className={`${props.compact ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}`}>
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
@@ -516,13 +533,15 @@ const Item = (props) =>{
             </div>
 
             {/* Footer */}
-            <div className="bg-white border-t border-slate-200 mt-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <p className="text-center text-slate-500 text-sm">
-                        Drag and drop tasks between sections to change their priority
-                    </p>
+            {!props.compact && (
+                <div className="bg-white border-t border-slate-200 mt-12">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <p className="text-center text-slate-500 text-sm">
+                            Drag and drop tasks between sections to change their priority
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 
