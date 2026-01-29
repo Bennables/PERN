@@ -1,5 +1,5 @@
 import { createToken } from "../helpers/helpers.js";
-import connection from "../helpers/connect.js";
+import {connection}from "../helpers/connect.js";
 import argon2 from 'argon2';
 import Cookies from 'js-cookie';
 

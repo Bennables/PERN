@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { redisClient }from "./redis.js"
-import connection from './connect.js';
+import {connection} from './connect.js';
 import {v4 as uuidv4} from 'uuid';
 
 const createToken = async (user) =>{

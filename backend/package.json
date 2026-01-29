@@ -13,8 +13,10 @@
   "type": "module",
   "dependencies": {
     "argon2": "^0.44.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -23,5 +25,9 @@
     "pool": "^0.4.1",
     "redis": "^5.8.2",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.6"
   }
 }

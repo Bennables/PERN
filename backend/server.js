@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser';
 import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks } from './controllers/others.js';
 import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
-import connection from './helpers/connect.js';
+import {connection} from './helpers/connect.js';
 import { redisClient } from './helpers/redis.js';
 
 const app = express();

@@ -1,5 +1,6 @@
-import connection from "../helpers/connect.js";
+import {connection} from "../helpers/connect.js";
 import { refreshTokens } from "../helpers/helpers.js";
+import { db } from "../helpers/connect.js";
 
 const connect = async(req, res) => { 
     res.send("WE'RE CONNECTED");
@@ -9,6 +10,9 @@ const getTasks = async(req, res) =>{
     const user = req.user;
 
     const user_id = (await connection.query("SELECT ID FROM users where username=$1", [user])).rows[0].id;
+    // !this one needs drizzle installed. WIll do tmr
+    // const user_id = db.select(id).from(users).where(eq(username, user))
+
 
     /// this needs to be changed 
     // SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind
@@ -60,9 +64,8 @@ const updateTasks = async(req, res) => {
 
         
 
-        let ind = 0
         // Check if there are tasks to update
-        if (!req.body || req.body.length === 0) {
+        if (!req.body || !Array.isArray(req.body) || req.body.length === 0) {
             console.log("No tasks to update");
             return res.status(400).send({"message": "No tasks provided for update"});
         }
@@ -76,10 +79,20 @@ const updateTasks = async(req, res) => {
         let urgencyQueryStr = "UPDATE tasks SET urgency = CASE";
 
         for(let i = 0; i < req.body.length ; ++i){
+            if (!req.body[i].task_id || req.body[i].urgency === undefined) {
+                console.log("Skipping invalid task:", req.body[i]);
+                continue;
+            }
             urgencyData.push(req.body[i].task_id)
             urgencyData.push(req.body[i].urgency)
             urgencyQueryStr += ` WHEN ID = $${++urgencyInd} THEN $${++urgencyInd}`
         }
+        
+        // Ensure we have at least one WHEN clause before adding ELSE
+        if (urgencyData.length === 0) {
+            return res.status(400).send({"message": "No valid tasks provided for update"});
+        }
+        
         urgencyData.push(user_id) 
         urgencyQueryStr += ` ELSE urgency END WHERE owner_id = $${++urgencyInd};`
 
@@ -89,10 +102,19 @@ const updateTasks = async(req, res) => {
         let orderingQueryStr = "UPDATE ordering SET ind = CASE";
 
         for(let i = 0; i < req.body.length ; ++i){
+            if (!req.body[i].task_id || req.body[i].index === undefined) {
+                continue;
+            }
             orderingData.push(req.body[i].task_id)
             orderingData.push(req.body[i].index)
             orderingQueryStr += ` WHEN task_id = $${++orderingInd} THEN $${++orderingInd}`
         }
+        
+        // Ensure we have at least one WHEN clause before adding ELSE
+        if (orderingData.length === 0) {
+            return res.status(400).send({"message": "No valid tasks provided for update"});
+        }
+        
         orderingData.push(user_id) 
         orderingQueryStr += ` ELSE ind END WHERE user_id = $${++orderingInd};`
 

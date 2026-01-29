@@ -19,7 +19,6 @@ const Logout = () =>
             (e)=>{
                 console.log(e);
                 console.log("WE HAD AN ERROR")
-
             }
         )
         sessionStorage.clear();
