@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 
 // Import controllers
 import { login, register } from './controllers/account.js';
-import { connect, getTasks, getUsers, new_refresh, updateTasks } from './controllers/others.js';
+import { connect, getTasks, getUsers, new_refresh, updateTasks, updateTeamTasks } from './controllers/others.js';
 import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
 import connection from './helpers/connect.js';
 import { redisClient } from './helpers/redis.js';
@@ -24,6 +24,32 @@ app.use(cookieParser());
 app.post("/login", login);
 app.post("/register", register);
 app.get("/auth/refresh", new_refresh);
+
+// Find org by name (used before login)
+app.get("/org/find", async (req, res) => {
+    try {
+        const name = (req.query.name || "").toString().trim();
+
+        if (!name) {
+            return res.status(400).send({ message: "Organization name is required" });
+        }
+
+        // Case-insensitive match
+        const result = await connection.query(
+            "SELECT id, name FROM org WHERE LOWER(name) = LOWER($1) LIMIT 1",
+            [name]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).send({ message: "Organization not found" });
+        }
+
+        return res.status(200).send({ message: "found", org: result.rows[0] });
+    } catch (error) {
+        console.log("Error finding organization:", error);
+        return res.status(500).send({ message: "Failed to find organization" });
+    }
+});
 
 // ===== UTILITY ROUTES =====
 app.get("/clear", (req, res) => {
@@ -76,13 +102,68 @@ const getTeamTasks = async(req, res) =>{
     console.log(org_id)
     console.log("THE ORG ID IS: " + org_id);
 
-    const teamTasks = await connection.query("SELECT * FROM tasks WHERE org_id = $1 ORDER BY urgency", [org_id]);
+    // Join ordering so org tasks respect per-user ordering
+    const teamTasks = await connection.query(
+        "SELECT tasks.id AS task_id, tasks.org_id, tasks.task_name, tasks.deadline, tasks.urgency, ordering.ind " +
+        "FROM ordering INNER JOIN tasks ON tasks.id = ordering.task_id " +
+        "WHERE ordering.user_id = $1 AND tasks.org_id = $2 " +
+        "ORDER BY urgency, ind",
+        [user_id, org_id]
+    );
     // console.log(teamTasks)
 
     res.status(200).send({"message": "success", "tasks": teamTasks.rows})
 }
 
 app.get("/team", getTeamTasks);
+app.put("/team/tasks", updateTeamTasks);
+
+// ===== ORGANIZATION ROUTES =====
+const createOrg = async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name || !name.trim()) {
+            console.log("couldn't get from team")
+            return res.status(400).send({ message: "Organization name is required" });
+        }
+
+        const orgName = name.trim();
+
+        // Check for existing org name
+        const existing = await connection.query(
+            "SELECT ID FROM org WHERE name = $1",
+            [orgName]
+        );
+
+        if (existing.rows.length > 0) {
+            return res.status(400).send({ message: "Organization name already exists" });
+        }
+
+        const user_id = await getUserID(req.user);
+
+        // Create org
+        const created = await connection.query(
+            "INSERT INTO org (name) VALUES ($1) RETURNING ID",
+            [orgName]
+        );
+
+        const org_id = created.rows[0].id;
+
+        // Add current user as member
+        await connection.query(
+            "INSERT INTO org_members (org_id, user_id) VALUES ($1, $2)",
+            [org_id, user_id]
+        );
+
+        res.status(201).send({ message: "Organization created", org_id });
+    } catch (error) {
+        console.log("Error creating organization:", error);
+        res.status(500).send({ message: "Failed to create organization" });
+    }
+};
+
+app.post("/org", createOrg);
 
 
 const createTask = async (req, res) =>{
@@ -108,22 +189,40 @@ const createTask = async (req, res) =>{
             res.status(201).send({"message": "Personal task created successfully", "task": result.rows[0]});
         }
         else{
-            // Get user's org through org_members table
-            const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
+            // Team task: prefer membership org, otherwise use org_id from client (selected on OrgFind)
+            const user_id = await getUserID(req.user);
+
+            let org_id = null;
             const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id=$1", [user_id]);
-            
-            if (org_result.rows.length === 0) {
-                return res.status(400).send({"message": "User is not part of any organization"});
+            if (org_result.rows.length > 0) {
+                org_id = org_result.rows[0].org_id;
+            } else if (req.body.org_id) {
+                org_id = Number(req.body.org_id);
+                if (!Number.isFinite(org_id)) {
+                    return res.status(400).send({ message: "Invalid org_id" });
+                }
+
+                // Auto-join user to selected org (safe: PK prevents duplicates)
+                await connection.query(
+                    "INSERT INTO org_members (org_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+                    [org_id, user_id]
+                );
+            } else {
+                return res.status(400).send({ message: "User is not part of any organization" });
             }
-            
-            const org_id = org_result.rows[0].org_id;
             
             // Insert team task
             const result = await connection.query(
-                "INSERT INTO tasks (org_id, task_name, deadline, urgency) VALUES ($1, $2, $3) RETURNING *", 
+                "INSERT INTO tasks (org_id, task_name, deadline, urgency) VALUES ($1, $2, $3, $4) RETURNING *", 
                 [org_id, taskName, deadline, urgency] // Default to low priority (1)
             );
             
+            // Create ordering entry for this user and team task
+            await connection.query(
+                "INSERT INTO ordering (user_id, task_id, ind) VALUES ($1, $2, $3)",
+                [user_id, result.rows[0].id, 0]
+            );
+
             res.status(201).send({"message": "Team task created successfully", "task": result.rows[0]});
         }
     } catch (error) {
@@ -138,6 +237,6 @@ app.post("/create", createTask)
 
 
 
-app.listen(3333, () => {
+app.listen(3333,  () => {
     console.log("We're connected \n http://localhost:3333");
 });
