@@ -67,7 +67,7 @@ const verifyToken = async (req, res, next) => {
         //this should get you a new refreshtoken. Done in the front end.
         if (e.name == 'TokenExpiredError'){
             // console.log(e);
-            return res.status(401).send({"message" : 'token expired'})
+            return res.status(401).json({"error": true, "message": "token expired"})
         }
 
         if (!token){
@@ -80,7 +80,7 @@ const verifyToken = async (req, res, next) => {
 
         console.log(e.name +" " +  e.message)
         // console.log(e)
-        return res.status(400).send({"message": "bad token"});
+        return res.status(400).json({"error": true, "message": "bad token"});
     }
 }
 

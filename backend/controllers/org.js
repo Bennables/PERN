@@ -6,7 +6,7 @@ const findOrg = async (req, res) => {
         const name = (req.query.name || "").toString().trim();
 
         if (!name) {
-            return res.status(400).send({ message: "Organization name is required" });
+            return res.status(400).json({ error: true, message: "Organization name is required" });
         }
 
         const result = await prisma.org.findFirst({
@@ -23,13 +23,13 @@ const findOrg = async (req, res) => {
         });
 
         if (!result) {
-            return res.status(404).send({ message: "Organization not found" });
+            return res.status(404).json({ error: true, message: "Organization not found" });
         }
 
-        return res.status(200).send({ message: "found", org: result });
+        return res.status(200).json({ error: false, message: "found", org: result });
     } catch (error) {
         console.log("Error finding organization:", error);
-        return res.status(500).send({ message: "Failed to find organization" });
+        return res.status(500).json({ error: true, message: "Failed to find organization" });
     }
 }
 
@@ -39,7 +39,7 @@ const createOrg = async (req, res) => {
 
         if (!name || !name.trim()) {
             console.log("couldn't get from team")
-            return res.status(400).send({ message: "Organization name is required" });
+            return res.status(400).json({ error: true, message: "Organization name is required" });
         }
 
         const orgName = name.trim();
@@ -49,7 +49,7 @@ const createOrg = async (req, res) => {
         });
 
         if (existing) {
-            return res.status(400).send({ message: "Organization name already exists" });
+            return res.status(400).json({ error: true, message: "Organization name already exists" });
         }
 
         const user_id = await getUserID(req.user);
@@ -65,10 +65,10 @@ const createOrg = async (req, res) => {
             }
         });
 
-        res.status(201).send({ message: "Organization created", org_id: created.ID });
+        res.status(201).json({ error: false, message: "Organization created", org_id: created.ID });
     } catch (error) {
         console.log("Error creating organization:", error);
-        res.status(500).send({ message: "Failed to create organization" });
+        res.status(500).json({ error: true, message: "Failed to create organization" });
     }
 };
 

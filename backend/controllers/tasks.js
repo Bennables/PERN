@@ -9,7 +9,7 @@ const getTasks = async (req, res) => {
     });
 
     if (!userRecord) {
-        return res.status(404).send({ "message": "User not found" });
+        return res.status(404).json({ "error": true, "message": "User not found" });
     }
 
     const user_id = userRecord.ID;
@@ -25,7 +25,7 @@ const getTasks = async (req, res) => {
         ]
     });
 
-    res.status(200).send({ "message": "success", "tasks": tasks })
+    res.status(200).json({ "error": false, "message": "success", "tasks": tasks })
 }
 
 const updateTasks = async (req, res) => {
@@ -35,7 +35,7 @@ const updateTasks = async (req, res) => {
         });
 
         if (!userRecord) {
-            return res.status(404).send({ "message": "User not found" });
+            return res.status(404).json({ "error": true, "message": "User not found" });
         }
 
         const user_id = userRecord.ID;
@@ -44,7 +44,7 @@ const updateTasks = async (req, res) => {
 
         if (!req.body || req.body.length === 0) {
             console.log("No tasks to update");
-            return res.status(400).send({ "message": "No tasks provided for update" });
+            return res.status(400).json({ "error": true, "message": "No tasks provided for update" });
         }
 
         console.log("Updating tasks for user_id:", user_id);
@@ -71,11 +71,11 @@ const updateTasks = async (req, res) => {
             }
         });
 
-        res.status(200).send({ "message": "Tasks updated successfully" })
+        res.status(200).json({ "error": false, "message": "Tasks updated successfully" })
     }
     catch (e) {
         console.log("Error updating tasks:", e)
-        res.status(500).send({ "message": "Failed to update tasks", "error": e.message })
+        res.status(500).json({ "error": true, "message": "Failed to update tasks" })
     }
 }
 
@@ -85,7 +85,7 @@ const getTeamTasks = async (req, res) => {
     });
 
     if (!userRecord) {
-        return res.status(404).send({ "message": "User not found" });
+        return res.status(404).json({ "error": true, "message": "User not found" });
     }
 
     const user_id = userRecord.ID;
@@ -95,7 +95,7 @@ const getTeamTasks = async (req, res) => {
     });
 
     if (!org_member) {
-        return res.status(400).send({ "message": "User is not part of any organization" });
+        return res.status(400).json({ "error": true, "message": "User is not part of any organization" });
     }
 
     const org_id = org_member.org_id;
@@ -117,7 +117,7 @@ const getTeamTasks = async (req, res) => {
         ]
     });
 
-    res.status(200).send({ "message": "success", "tasks": teamTasks })
+    res.status(200).json({ "error": false, "message": "success", "tasks": teamTasks })
 }
 
 const updateTeamTasks = async (req, res) => {
@@ -127,7 +127,7 @@ const updateTeamTasks = async (req, res) => {
         });
 
         if (!userRecord) {
-            return res.status(404).send({ "message": "User not found" });
+            return res.status(404).json({ "error": true, "message": "User not found" });
         }
 
         const user_id = userRecord.ID;
@@ -137,14 +137,14 @@ const updateTeamTasks = async (req, res) => {
         });
 
         if (!org_member) {
-            return res.status(400).send({ "message": "User is not part of any organization" });
+            return res.status(400).json({ "error": true, "message": "User is not part of any organization" });
         }
 
         const org_id = org_member.org_id;
 
         if (!req.body || req.body.length === 0) {
             console.log("No team tasks to update");
-            return res.status(400).send({ "message": "No tasks provided for update" });
+            return res.status(400).json({ "error": true, "message": "No tasks provided for update" });
         }
 
         console.log("Updating team tasks for user_id:", user_id, "org_id:", org_id);
@@ -171,10 +171,10 @@ const updateTeamTasks = async (req, res) => {
             }
         });
 
-        res.status(200).send({ "message": "Team tasks updated successfully" });
+        res.status(200).json({ "error": false, "message": "Team tasks updated successfully" });
     } catch (e) {
         console.log("Error updating team tasks:", e);
-        res.status(500).send({ "message": "Failed to update team tasks", "error": e.message });
+        res.status(500).json({ "error": true, "message": "Failed to update team tasks" });
     }
 };
 
@@ -203,7 +203,7 @@ const createTask = async (req, res) => {
                 }
             });
 
-            res.status(201).send({ "message": "Personal task created successfully", "task": result });
+            res.status(201).json({ "error": false, "message": "Personal task created successfully", "task": result });
         }
         else {
             const user_id = await getUserID(req.user);
@@ -218,7 +218,7 @@ const createTask = async (req, res) => {
             } else if (req.body.org_id) {
                 org_id = Number(req.body.org_id);
                 if (!Number.isFinite(org_id)) {
-                    return res.status(400).send({ message: "Invalid org_id" });
+                    return res.status(400).json({ error: true, message: "Invalid org_id" });
                 }
 
                 await prisma.org_members.upsert({
@@ -235,7 +235,7 @@ const createTask = async (req, res) => {
                     }
                 });
             } else {
-                return res.status(400).send({ message: "User is not part of any organization" });
+                return res.status(400).json({ error: true, message: "User is not part of any organization" });
             }
 
             const result = await prisma.tasks.create({
@@ -253,11 +253,11 @@ const createTask = async (req, res) => {
                 }
             });
 
-            res.status(201).send({ "message": "Team task created successfully", "task": result });
+            res.status(201).json({ "error": false, "message": "Team task created successfully", "task": result });
         }
     } catch (error) {
         console.log("Error creating task:", error);
-        res.status(500).send({ "message": "Failed to create task", "error": error.message });
+        res.status(500).json({ "error": true, "message": "Failed to create task" });
     }
 }
 
