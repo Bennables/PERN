@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model users {
+  ID        Int            @id @default(autoincrement())
+  username  String         @unique @db.VarChar(32)
+  pwHashed  String         @db.VarChar(128)
+  lvl       Int
+  currXp    Int
+
+  ownedTasks tasks[]       @relation("OwnedTasks")
+  orgMembers org_members[]
+  ordering   ordering[]
+}
+
+model org {
+  ID        Int            @id @default(autoincrement())
+  name      String         @unique @db.VarChar(32)
+
+  members   org_members[]
+  tasks     tasks[]
+}
+
+model org_members {
+  org_id   Int
+  user_id  Int
+
+  org      org   @relation(fields: [org_id], references: [ID], onDelete: Cascade)
+  user     users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+
+  @@id([org_id, user_id])
+}
+
+model tasks {
+  ID        Int       @id @default(autoincrement())
+  owner_id  Int?
+  org_id    Int?
+  task_name String    @db.VarChar(32)
+  deadline  DateTime
+  urgency   Int
+
+  owner     users?    @relation("OwnedTasks", fields: [owner_id], references: [ID])
+  org       org?      @relation(fields: [org_id], references: [ID])
+  ordering  ordering[]
+}
+
+model ordering {
+  user_id Int
+  task_id Int
+  ind     Int
+
+  user    users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+  task    tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+
+  @@id([user_id, task_id])
+}
+
+model levels {
+  lvl   Int
+  lvlXP Int
+
+  @@id([lvl])
+}
