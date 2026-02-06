@@ -1,0 +1,264 @@
+import { prisma } from "../lib/prisma.js";
+import { getUserID } from "../helpers/helpers.js";
+
+const getTasks = async (req, res) => {
+    const user = req.user;
+
+    const userRecord = await prisma.users.findUnique({
+        where: { username: user }
+    });
+
+    if (!userRecord) {
+        return res.status(404).send({ "message": "User not found" });
+    }
+
+    const user_id = userRecord.ID;
+
+    const tasks = await prisma.ordering.findMany({
+        where: { user_id },
+        include: {
+            task: true
+        },
+        orderBy: [
+            { task: { urgency: 'asc' } },
+            { ind: 'asc' }
+        ]
+    });
+
+    res.status(200).send({ "message": "success", "tasks": tasks })
+}
+
+const updateTasks = async (req, res) => {
+    try {
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user }
+        });
+
+        if (!userRecord) {
+            return res.status(404).send({ "message": "User not found" });
+        }
+
+        const user_id = userRecord.ID;
+
+        console.log(req.body);
+
+        if (!req.body || req.body.length === 0) {
+            console.log("No tasks to update");
+            return res.status(400).send({ "message": "No tasks provided for update" });
+        }
+
+        console.log("Updating tasks for user_id:", user_id);
+        console.log("Tasks to update:", req.body.length);
+
+        await prisma.$transaction(async (tx) => {
+            for (const task of req.body) {
+                await tx.tasks.update({
+                    where: { ID: task.task_id },
+                    data: { urgency: task.urgency }
+                });
+            }
+
+            for (const task of req.body) {
+                await tx.ordering.update({
+                    where: {
+                        user_id_task_id: {
+                            user_id: user_id,
+                            task_id: task.task_id
+                        }
+                    },
+                    data: { ind: task.index }
+                });
+            }
+        });
+
+        res.status(200).send({ "message": "Tasks updated successfully" })
+    }
+    catch (e) {
+        console.log("Error updating tasks:", e)
+        res.status(500).send({ "message": "Failed to update tasks", "error": e.message })
+    }
+}
+
+const getTeamTasks = async (req, res) => {
+    const userRecord = await prisma.users.findUnique({
+        where: { username: req.user }
+    });
+
+    if (!userRecord) {
+        return res.status(404).send({ "message": "User not found" });
+    }
+
+    const user_id = userRecord.ID;
+
+    const org_member = await prisma.org_members.findFirst({
+        where: { user_id }
+    });
+
+    if (!org_member) {
+        return res.status(400).send({ "message": "User is not part of any organization" });
+    }
+
+    const org_id = org_member.org_id;
+    console.log("THE ORG ID IS: " + org_id);
+
+    const teamTasks = await prisma.ordering.findMany({
+        where: {
+            user_id,
+            task: {
+                org_id
+            }
+        },
+        include: {
+            task: true
+        },
+        orderBy: [
+            { task: { urgency: 'asc' } },
+            { ind: 'asc' }
+        ]
+    });
+
+    res.status(200).send({ "message": "success", "tasks": teamTasks })
+}
+
+const updateTeamTasks = async (req, res) => {
+    try {
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user }
+        });
+
+        if (!userRecord) {
+            return res.status(404).send({ "message": "User not found" });
+        }
+
+        const user_id = userRecord.ID;
+
+        const org_member = await prisma.org_members.findFirst({
+            where: { user_id }
+        });
+
+        if (!org_member) {
+            return res.status(400).send({ "message": "User is not part of any organization" });
+        }
+
+        const org_id = org_member.org_id;
+
+        if (!req.body || req.body.length === 0) {
+            console.log("No team tasks to update");
+            return res.status(400).send({ "message": "No tasks provided for update" });
+        }
+
+        console.log("Updating team tasks for user_id:", user_id, "org_id:", org_id);
+        console.log("Tasks to update:", req.body.length);
+
+        await prisma.$transaction(async (tx) => {
+            for (const task of req.body) {
+                await tx.tasks.update({
+                    where: { ID: task.task_id },
+                    data: { urgency: task.urgency }
+                });
+            }
+
+            for (const task of req.body) {
+                await tx.ordering.update({
+                    where: {
+                        user_id_task_id: {
+                            user_id: user_id,
+                            task_id: task.task_id
+                        }
+                    },
+                    data: { ind: task.index }
+                });
+            }
+        });
+
+        res.status(200).send({ "message": "Team tasks updated successfully" });
+    } catch (e) {
+        console.log("Error updating team tasks:", e);
+        res.status(500).send({ "message": "Failed to update team tasks", "error": e.message });
+    }
+};
+
+const createTask = async (req, res) => {
+    try {
+        const scope = req.body.scope;
+        const taskName = req.body.name;
+        const deadline = req.body.deadline ? new Date(req.body.deadline) : null;
+        const urgency = req.body.urgency || 1;
+
+        if (scope == "personal") {
+            const user_id = await getUserID(req.user);
+
+            const result = await prisma.tasks.create({
+                data: {
+                    owner_id: user_id,
+                    task_name: taskName,
+                    deadline,
+                    urgency,
+                    ordering: {
+                        create: {
+                            user_id,
+                            ind: 0
+                        }
+                    }
+                }
+            });
+
+            res.status(201).send({ "message": "Personal task created successfully", "task": result });
+        }
+        else {
+            const user_id = await getUserID(req.user);
+
+            let org_id = null;
+            const org_member = await prisma.org_members.findFirst({
+                where: { user_id }
+            });
+
+            if (org_member) {
+                org_id = org_member.org_id;
+            } else if (req.body.org_id) {
+                org_id = Number(req.body.org_id);
+                if (!Number.isFinite(org_id)) {
+                    return res.status(400).send({ message: "Invalid org_id" });
+                }
+
+                await prisma.org_members.upsert({
+                    where: {
+                        org_id_user_id: {
+                            org_id,
+                            user_id
+                        }
+                    },
+                    update: {},
+                    create: {
+                        org_id,
+                        user_id
+                    }
+                });
+            } else {
+                return res.status(400).send({ message: "User is not part of any organization" });
+            }
+
+            const result = await prisma.tasks.create({
+                data: {
+                    org_id,
+                    task_name: taskName,
+                    deadline,
+                    urgency,
+                    ordering: {
+                        create: {
+                            user_id,
+                            ind: 0
+                        }
+                    }
+                }
+            });
+
+            res.status(201).send({ "message": "Team task created successfully", "task": result });
+        }
+    } catch (error) {
+        console.log("Error creating task:", error);
+        res.status(500).send({ "message": "Failed to create task", "error": error.message });
+    }
+}
+
+export { getTasks, updateTasks, getTeamTasks, updateTeamTasks, createTask };

@@ -15,10 +15,11 @@ const Personal = () => {
     useEffect(() => {
         const checkOrg = async () => {
             try {
-                await axios.get(`${link}/team`, {
+                const a = await axios.get(`${link}/team`, {
                     headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken")}` },
                     withCredentials: true
                 });
+                console.log(a)
                 setHasOrg(true);
             } catch (err) {
                 const msg = err?.response?.data?.message;
