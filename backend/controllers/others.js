@@ -1,4 +1,4 @@
-import connection from "../helpers/connect.js";
+import { prisma } from "../lib/prisma.js";
 import { refreshTokens } from "../helpers/helpers.js";
 
 const connect = async(req, res) => { 
@@ -8,21 +8,34 @@ const connect = async(req, res) => {
 const getTasks = async(req, res) =>{
     const user = req.user;
 
-    const user_id = (await connection.query("SELECT ID FROM users where username=$1", [user])).rows[0].id;
+    const userRecord = await prisma.users.findUnique({
+        where: { username: user }
+    });
 
-    /// this needs to be changed 
-    // SELECT * FROM tasks WHERE owner_id=$1 ORDER BY urgency, ind
-    // select task_id from order where user_id = $1 ORDER BY ind;
-    const tasks = (await connection.query("SELECT * FROM ordering INNER JOIN tasks ON tasks.ID = ordering.task_id WHERE ordering.user_id=$1 ORDER BY urgency, ind", [user_id])).rows
-    // console.log(tasks);
+    if (!userRecord) {
+        return res.status(404).send({"message": "User not found"});
+    }
+
+    const user_id = userRecord.ID;
+
+    const tasks = await prisma.ordering.findMany({
+        where: { user_id },
+        include: {
+            task: true
+        },
+        orderBy: [
+            { task: { urgency: 'asc' } },
+            { ind: 'asc' }
+        ]
+    });
 
     res.status(200).send({"message": "success", "tasks": tasks})
 }
 
 const getUsers = async  (req, res) =>{
     console.log(req.body);
-    const data = await connection.query("SELECT * FROM users;")
-    console.log(data.rows);
+    const data = await prisma.users.findMany();
+    console.log(data);
     res.status(200).send("we're good. don't worry")
 }
 
@@ -49,18 +62,18 @@ const new_refresh = async(req, res) =>{
 const updateTasks = async(req, res) => {
     // updates the order of tasks.
     try{
-        const data = []
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user }
+        });
 
-        const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
-        // console.log(user_id);
+        if (!userRecord) {
+            return res.status(404).send({"message": "User not found"});
+        }
 
+        const user_id = userRecord.ID;
 
-        // console.log(user);
         console.log(req.body);
 
-        
-
-        let ind = 0
         // Check if there are tasks to update
         if (!req.body || req.body.length === 0) {
             console.log("No tasks to update");
@@ -70,42 +83,29 @@ const updateTasks = async(req, res) => {
         console.log("Updating tasks for user_id:", user_id);
         console.log("Tasks to update:", req.body.length);
 
-        // First update urgency in tasks table
-        let urgencyData = [];
-        let urgencyInd = 0;
-        let urgencyQueryStr = "UPDATE tasks SET urgency = CASE";
+        // Use Prisma transaction to update both tasks and ordering
+        await prisma.$transaction(async (tx) => {
+            // Update urgency for each task
+            for (const task of req.body) {
+                await tx.tasks.update({
+                    where: { ID: task.task_id },
+                    data: { urgency: task.urgency }
+                });
+            }
 
-        for(let i = 0; i < req.body.length ; ++i){
-            urgencyData.push(req.body[i].task_id)
-            urgencyData.push(req.body[i].urgency)
-            urgencyQueryStr += ` WHEN ID = $${++urgencyInd} THEN $${++urgencyInd}`
-        }
-        urgencyData.push(user_id) 
-        urgencyQueryStr += ` ELSE urgency END WHERE owner_id = $${++urgencyInd};`
-
-        // Then update ind in ordering table
-        let orderingData = [];
-        let orderingInd = 0;
-        let orderingQueryStr = "UPDATE ordering SET ind = CASE";
-
-        for(let i = 0; i < req.body.length ; ++i){
-            orderingData.push(req.body[i].task_id)
-            orderingData.push(req.body[i].index)
-            orderingQueryStr += ` WHEN task_id = $${++orderingInd} THEN $${++orderingInd}`
-        }
-        orderingData.push(user_id) 
-        orderingQueryStr += ` ELSE ind END WHERE user_id = $${++orderingInd};`
-
-        console.log("Urgency query:", urgencyQueryStr);
-        console.log("Ordering query:", orderingQueryStr);
-
-        // Execute both queries
-        await connection.query(urgencyQueryStr, urgencyData);
-        await connection.query(orderingQueryStr, orderingData);
-        // console.log(urgencyQueryStr)
-        // console.log(urgencyData)
-        // console.log(orderingQueryStr)
-        // console.log(orderingData)
+            // Update ordering indices
+            for (const task of req.body) {
+                await tx.ordering.update({
+                    where: {
+                        user_id_task_id: {
+                            user_id: user_id,
+                            task_id: task.task_id
+                        }
+                    },
+                    data: { ind: task.index }
+                });
+            }
+        });
 
         res.status(200).send({"message" : "Tasks updated successfully"})
     }
@@ -118,21 +118,25 @@ const updateTasks = async(req, res) => {
 
 const updateTeamTasks = async (req, res) => {
     try {
-        const user_id = (await connection.query(
-            "SELECT ID FROM users WHERE username=$1",
-            [req.user]
-        )).rows[0].id;
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user }
+        });
 
-        const org_result = await connection.query(
-            "SELECT org_id FROM org_members WHERE user_id=$1",
-            [user_id]
-        );
+        if (!userRecord) {
+            return res.status(404).send({ "message": "User not found" });
+        }
 
-        if (org_result.rows.length === 0) {
+        const user_id = userRecord.ID;
+
+        const org_member = await prisma.org_members.findFirst({
+            where: { user_id }
+        });
+
+        if (!org_member) {
             return res.status(400).send({ "message": "User is not part of any organization" });
         }
 
-        const org_id = org_result.rows[0].org_id;
+        const org_id = org_member.org_id;
 
         if (!req.body || req.body.length === 0) {
             console.log("No team tasks to update");
@@ -142,37 +146,29 @@ const updateTeamTasks = async (req, res) => {
         console.log("Updating team tasks for user_id:", user_id, "org_id:", org_id);
         console.log("Tasks to update:", req.body.length);
 
-        // Update urgency for org tasks
-        let urgencyData = [];
-        let urgencyInd = 0;
-        let urgencyQueryStr = "UPDATE tasks SET urgency = CASE";
+        // Use Prisma transaction to update both tasks and ordering
+        await prisma.$transaction(async (tx) => {
+            // Update urgency for each task
+            for (const task of req.body) {
+                await tx.tasks.update({
+                    where: { ID: task.task_id },
+                    data: { urgency: task.urgency }
+                });
+            }
 
-        for (let i = 0; i < req.body.length; ++i) {
-            urgencyData.push(req.body[i].task_id);
-            urgencyData.push(req.body[i].urgency);
-            urgencyQueryStr += ` WHEN ID = $${++urgencyInd} THEN $${++urgencyInd}`;
-        }
-        urgencyData.push(org_id);
-        urgencyQueryStr += ` ELSE urgency END WHERE org_id = $${++urgencyInd};`;
-
-        // Update ordering per user
-        let orderingData = [];
-        let orderingInd = 0;
-        let orderingQueryStr = "UPDATE ordering SET ind = CASE";
-
-        for (let i = 0; i < req.body.length; ++i) {
-            orderingData.push(req.body[i].task_id);
-            orderingData.push(req.body[i].index);
-            orderingQueryStr += ` WHEN task_id = $${++orderingInd} THEN $${++orderingInd}`;
-        }
-        orderingData.push(user_id);
-        orderingQueryStr += ` ELSE ind END WHERE user_id = $${++orderingInd};`;
-
-        console.log("Team urgency query:", urgencyQueryStr);
-        console.log("Team ordering query:", orderingQueryStr);
-
-        await connection.query(urgencyQueryStr, urgencyData);
-        await connection.query(orderingQueryStr, orderingData);
+            // Update ordering indices
+            for (const task of req.body) {
+                await tx.ordering.update({
+                    where: {
+                        user_id_task_id: {
+                            user_id: user_id,
+                            task_id: task.task_id
+                        }
+                    },
+                    data: { ind: task.index }
+                });
+            }
+        });
 
         res.status(200).send({ "message": "Team tasks updated successfully" });
     } catch (e) {
