@@ -148,12 +148,14 @@ const Item = (props) =>{
 
                     for(let i = 0; i < tasks.length; i++){
                         const task = tasks[i];
-                        const taskId = task?.task_id ?? task?.id;
+                        const taskId = task?.task_id ?? task?.task?.ID ?? task?.id;
                         if (!task || !taskId) {
                             console.warn("Invalid task data:", task);
                             continue;
                         }
-                        const normalizedTask = { ...task, task_id: taskId };
+                        // Flatten nested task object (ordering includes { task: {...} })
+                        const flat = task.task ? { ...task, ...task.task } : task;
+                        const normalizedTask = { ...flat, task_id: taskId };
                         
                         if (normalizedTask.urgency == null){
                             newState[MAPPER[1]].push(normalizedTask);

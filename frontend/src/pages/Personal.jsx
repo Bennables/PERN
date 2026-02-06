@@ -80,21 +80,7 @@ const Personal = () => {
                     <Item dest={"tasks"} compact />
                 </section>
 
-                {/* Org tasks */}
-                {hasOrg && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-slate-900">Organization</h2>
-                            <button
-                                className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 hover:bg-slate-50"
-                                onClick={() => nav("/create")}
-                            >
-                                Add task
-                            </button>
-                        </div>
-                        <Item dest={"team"} compact />
-                    </section>
-                )}
+            
             </div>
         </div>
     )
