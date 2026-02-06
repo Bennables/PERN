@@ -31,7 +31,7 @@ const OrgFind = () => {
 
       nav("/login");
     } catch (err) {
-      console.log("Error finding org:", err);
+      console.error("Error finding org:", err?.response?.data?.message || err.message);
       if (err.response?.status === 404) {
         setError("Organization not found. Check the name or create a new one.");
       } else {

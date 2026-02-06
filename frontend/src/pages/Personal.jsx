@@ -23,6 +23,7 @@ const Personal = () => {
                 setHasOrg(true);
             } catch (err) {
                 const msg = err?.response?.data?.message;
+                console.error("Personal org check error:", msg || err.message);
                 if (err?.response?.status === 400 && msg === "User is not part of any organization") {
                     setHasOrg(false);
                 } else if (err?.response?.status === 401 || msg === "token expired") {

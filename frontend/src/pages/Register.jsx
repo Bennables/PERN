@@ -16,11 +16,14 @@ const Register = () => {
             console.log("One of these is empty");
         }
         else{
-            const link = import.meta.env.VITE_LINK;
-            const reply = await axios.post(`${link}/register`, {username: username, password: password})
-            console.log()
-            if(reply.data == "created"){
-                nav("/login")
+            try {
+                const link = import.meta.env.VITE_LINK;
+                const reply = await axios.post(`${link}/register`, {username: username, password: password})
+                if(!reply.data.error){
+                    nav("/login")
+                }
+            } catch(e) {
+                console.error("Register error:", e?.response?.data?.message || e.message);
             }
         }
     }

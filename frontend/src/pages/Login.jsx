@@ -31,7 +31,7 @@ const Login = () => {
             }
         }
         catch(e){
-            console.log("There was an error" + e);
+            console.error("Login error:", e?.response?.data?.message || e.message);
         }
     }
 

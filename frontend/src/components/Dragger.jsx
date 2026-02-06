@@ -177,7 +177,7 @@ const Item = (props) =>{
                     setLoaded(true);
                 })
                 .catch(async err =>{
-                    console.log("Error fetching tasks:", err);
+                    console.error("Error fetching tasks:", err?.response?.data?.message || err.message);
                     
                     // Handle network errors
                     if (!err.response) {
@@ -197,7 +197,7 @@ const Item = (props) =>{
                                 window.location.reload();
                             })
                             .catch(refreshErr => { 
-                                console.log("Refresh token failed:", refreshErr);
+                                console.error("Refresh token failed:", refreshErr?.response?.data?.message || refreshErr.message);
                                 if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
                                     sessionStorage.removeItem('accessToken');
                                     nav('/login');
@@ -273,7 +273,7 @@ const Item = (props) =>{
                 }
             )
             .catch(async err =>{
-                console.log("Error updating tasks:", err);
+                console.error("Error updating tasks:", err?.response?.data?.message || err.message);
                 
                 // Handle network errors
                 if (!err.response) {
@@ -291,7 +291,7 @@ const Item = (props) =>{
                             sessionStorage.setItem("accessToken", res.data.token);
                         })
                         .catch(refreshErr => { 
-                            console.log("Refresh failed during update:", refreshErr);
+                            console.error("Refresh failed during update:", refreshErr?.response?.data?.message || refreshErr.message);
                             if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
                                 sessionStorage.removeItem('accessToken');
                                 nav('/login');
