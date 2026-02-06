@@ -11,6 +11,8 @@ model users {
   ID        Int            @id @default(autoincrement())
   username  String         @unique @db.VarChar(32)
   pwHashed  String         @db.VarChar(128)
+
+
   lvl       Int
   currXp    Int
 

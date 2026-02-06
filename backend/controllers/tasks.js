@@ -183,7 +183,7 @@ const createTask = async (req, res) => {
         const scope = req.body.scope;
         const taskName = req.body.name;
         const deadline = req.body.deadline ? new Date(req.body.deadline) : null;
-        const urgency = req.body.urgency || 1;
+        const urgency = parseInt(req.body.urgency, 10) || 1;
 
         if (scope == "personal") {
             const user_id = await getUserID(req.user);

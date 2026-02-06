@@ -36,6 +36,7 @@ const register = async (req, res) => {
     console.log(req.body);
     const username = req.body.username;
     const password = req.body.password.toString();
+    const orgName = req.body.orgName ? req.body.orgName.trim() : null;
 
     const existing = await prisma.users.findUnique({
         where: { username }
@@ -47,8 +48,17 @@ const register = async (req, res) => {
         return;
     }
 
+    // If an org name was provided, verify it exists before creating the user
+    let org = null;
+    if (orgName) {
+        org = await prisma.org.findUnique({ where: { name: orgName } });
+        if (!org) {
+            return res.status(404).json({ "error": true, "message": "Organization not found" });
+        }
+    }
+
     const hash = await argon2.hash(password, { secret: Buffer.from(process.env.SECRET_PEPPER), type: argon2.argon2id })
-    await prisma.users.create({
+    const newUser = await prisma.users.create({
         data: {
             username,
             pwHashed: hash,
@@ -56,6 +66,17 @@ const register = async (req, res) => {
             currXp: 0
         }
     });
+
+    // Add user to org if one was provided
+    if (org) {
+        await prisma.org_members.create({
+            data: {
+                org_id: org.ID,
+                user_id: newUser.ID
+            }
+        });
+    }
+
     res.status(201).json({"error": false, "message": "created"})
 }
 
