@@ -93,7 +93,7 @@ const reorder = (list, startIndex, endIndex) => {
 const Item = (props) =>{
 
     const link = import.meta.env.VITE_LINK
-    const nav = useNavigate(); // ✅ CORRECT: Hook at top level
+    const nav = useNavigate();
 
     const [loaded, setLoaded] = useState(false)
     const [error, setError] = useState(null)
@@ -101,7 +101,7 @@ const Item = (props) =>{
     // Simple notification system
     const showNotification = (message) => {
         setError(message);
-        setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+        setTimeout(() => setError(null), 5000);
     };
 
     // Check if environment variable exists
@@ -109,6 +109,56 @@ const Item = (props) =>{
         console.error("VITE_LINK environment variable is not defined");
         return <div>Configuration error. Please check environment variables.</div>;
     }
+
+    // Unified error handler for all API calls
+    const handleApiError = async (err, context = 'request') => {
+        console.error(`Error ${context}:`, err?.response?.data?.message || err.message);
+        
+        if (!err.response) {
+            showNotification(context === 'update' ? "Connection failed. Changes may not be saved." : "Connection failed. Check your internet connection.");
+            return;
+        }
+        
+        const status = err.response.status;
+        
+        if (status === 401 || err.response?.data?.message === 'token expired') {
+            try {
+                const res = await axios.get(`${link}/auth/refresh`, {withCredentials: true});
+                console.log("Token refreshed successfully");
+                sessionStorage.setItem("accessToken", res.data.token);
+                if (context === 'fetching tasks') {
+                    window.location.reload();
+                }
+            } catch (refreshErr) {
+                console.error("Refresh token failed:", refreshErr?.response?.data?.message || refreshErr.message);
+                if (refreshErr.response?.data?.message === "token doesn't exist") {
+                    sessionStorage.removeItem('accessToken');
+                }
+                showNotification("Session expired. Please login again.");
+                nav('/login');
+            }
+        }
+        else if (status === 403) {
+            showNotification("Access denied. Redirecting to login...");
+            setTimeout(() => nav('/login'), 2000);
+        }
+        else if (status === 400) {
+            showNotification(context === 'update' ? "Invalid data sent. Changes not saved." : "Invalid request. Please check your data.");
+        }
+        else if (status === 404) {
+            console.error(`${context} endpoint not found - check your API routes`);
+            showNotification("Service temporarily unavailable.");
+        }
+        else if (status === 429) {
+            showNotification(context === 'update' ? "Too many updates. Please wait before making more changes." : "Too many requests. Please wait a moment before trying again.");
+        }
+        else if (status >= 500) {
+            showNotification(context === 'update' ? "Server error. Changes may not be saved." : "Server error. Please try again later.");
+        }
+        else {
+            showNotification(context === 'update' ? "Failed to save changes." : "An unexpected error occurred.");
+        }
+    };
 
 
     const [state, setState]= useState({})
@@ -178,68 +228,12 @@ const Item = (props) =>{
                     setState(newState);
                     setLoaded(true);
                 })
-                .catch(async err =>{
-                    console.error("Error fetching tasks:", err?.response?.data?.message || err.message);
-                    
-                    // Handle network errors
-                    if (!err.response) {
-                        showNotification("Connection failed. Check your internet connection.");
-                        return;
-                    }
-                    
-                    const status = err.response.status;
-                    
-                    // Handle different HTTP status codes
-                    if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log("Token refreshed successfully");
-                                sessionStorage.setItem("accessToken", res.data.token);
-                                // Retry the original request
-                                window.location.reload();
-                            })
-                            .catch(refreshErr => { 
-                                console.error("Refresh token failed:", refreshErr?.response?.data?.message || refreshErr.message);
-                                if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken');
-                                    nav('/login');
-                                } else {
-                                    showNotification("Session expired. Please login again.");
-                                    nav('/login');
-                                }
-                            });
-                    }
-                    else if (status === 403) {
-                        showNotification("Access denied. Redirecting to login...");
-                        setTimeout(() => nav('/login'), 2000);
-                    }
-                    else if (status === 400) {
-                        showNotification("Invalid request. Please check your data.");
-                    }
-                    else if (status === 404) {
-                        console.error("API endpoint not found - check your routes");
-                        showNotification("Service temporarily unavailable.");
-                    }
-                    else if (status === 429) {
-                        showNotification("Too many requests. Please wait a moment before trying again.");
-                    }
-                    else if (status >= 500) {
-                        showNotification("Server error. Please try again later.");
-                    }
-                    else {
-                        showNotification("An unexpected error occurred.");
-                    }
-                })
+                .catch(err => handleApiError(err, 'fetching tasks'))
             }
         }
 
         getData();
-
-        
     }, [])
-
-
-    const [data, setData] = useState([])
 
     useEffect( () => {
 
@@ -270,72 +264,12 @@ const Item = (props) =>{
             const endpoint = props.dest === "team" ? "/team/tasks" : "/tasks";
 
             axios.put(`${link}${endpoint}`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
-            .then(res =>{
-                console.log(res);
-                }
-            )
-            .catch(async err =>{
-                console.error("Error updating tasks:", err?.response?.data?.message || err.message);
-                
-                // Handle network errors
-                if (!err.response) {
-                    showNotification("Connection failed. Changes may not be saved.");
-                    return;
-                }
-                
-                const status = err.response.status;
-                
-                // Handle different HTTP status codes
-                if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
-                    await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                        .then(res =>{
-                            console.log("Token refreshed for update");
-                            sessionStorage.setItem("accessToken", res.data.token);
-                        })
-                        .catch(refreshErr => { 
-                            console.error("Refresh failed during update:", refreshErr?.response?.data?.message || refreshErr.message);
-                            if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
-                                sessionStorage.removeItem('accessToken');
-                                nav('/login');
-                            } else {
-                                showNotification("Session expired. Please login again.");
-                                nav('/login');
-                            }
-                        });
-                }
-                else if (status === 403) {
-                    showNotification("Access denied. Redirecting to login...");
-                    setTimeout(() => nav('/login'), 2000);
-                }
-                else if (status === 400) {
-                    showNotification("Invalid data sent. Changes not saved.");
-                }
-                else if (status === 404) {
-                    console.error("Update endpoint not found - check your API routes");
-                    showNotification("Service temporarily unavailable.");
-                }
-                else if (status === 429) {
-                    showNotification("Too many updates. Please wait before making more changes.");
-                }
-                else if (status >= 500) {
-                    showNotification("Server error. Changes may not be saved.");
-                }
-                else {
-                    showNotification("Failed to save changes.");
-                }
-            }
-            )
+            .then(res => console.log(res))
+            .catch(err => handleApiError(err, 'update'))
             }
             
         update()
     }, [state])
-
-
-    // const [state, setState] = useState({
-    //     items:getItems(10),
-    //     selected:getItems(5,10),
-    //     hehe:getItems(5,15)
-    // });
 
     const id2List = {
         //ids for two lists
