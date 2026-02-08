@@ -405,11 +405,11 @@ const Item = (props) =>{
             {/* Main Content */}
             <div className={`${props.compact ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}`}>
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="flex flex-col gap-6">
                         
                         {/* Low Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+                            <div className="bg-green-50 border-b border-green-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -421,14 +421,14 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-green-600 text-sm mt-1">Tasks that can be done when time permits</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable" state={state.low || []} urgencyColor="green"/>
                             </div>
                         </div>
 
                         {/* High Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-orange-50 border-b border-orange-100 px-6 py-4">
+                            <div className="bg-orange-50 border-b border-orange-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -440,14 +440,14 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-orange-600 text-sm mt-1">Important tasks that need attention soon</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable2" state={state.high || []} urgencyColor="orange"/>
                             </div>
                         </div>
 
                         {/* Any Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
+                            <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -459,7 +459,7 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-blue-600 text-sm mt-1">Tasks that can be done at any time</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable3" state={state.any || []} urgencyColor="blue"/>
                             </div>
                         </div>
