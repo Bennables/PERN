@@ -233,7 +233,7 @@ const createTask = async (req, res) => {
                         org_id,
                         user_id
                     }
-                });
+                })
             } else {
                 return res.status(400).json({ error: true, message: "User is not part of any organization" });
             }
@@ -252,6 +252,26 @@ const createTask = async (req, res) => {
                     }
                 }
             });
+            const orgUsers = await prisma.org_members.findMany({
+                where:{
+                    org_id: org_id
+                }
+            });
+            const lastByUser = await prisma.ordering.groupBy({
+                by: ["user_id"],
+                where: { user_id: { in: orgUsers.map(u => u.user_id) } },
+                _max: { ind: true },
+            });
+
+            const maxMap = new Map(lastByUser.map(r => [r.user_id, r._max.ind ?? 0]));
+            const createMany = await prisma.ordering.createMany({
+                data: orgUsers.map((user) => ({
+                task_id: result.ID,
+                user_id: user.user_id,
+                ind: (maxMap.get(user.user_id) ?? 0) + 1000
+                })),
+                skipDuplicates: true,
+            })
 
             res.status(201).json({ "error": false, "message": "Team task created successfully", "task": result });
         }

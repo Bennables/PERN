@@ -59,6 +59,7 @@ model ordering {
 
   user    users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
   task    tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+  
 
   @@id([user_id, task_id])
 }
