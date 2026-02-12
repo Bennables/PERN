@@ -17,6 +17,7 @@ const Team = () => {
                 );
                 setHasOrg(true);
             } catch (err) {
+                console.error("Team check error:", err?.response?.data?.message || err.message);
                 if (err.response && err.response.status === 400 && err.response.data?.message === "User is not part of any organization") {
                     setHasOrg(false);
                 } else if (err.response && err.response.status === 401) {

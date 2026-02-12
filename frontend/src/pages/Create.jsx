@@ -36,8 +36,8 @@ const Create = () => {
         let data = {
             name: name,
             scope: scope,
-            deadline: `${year}-${month}-${day}`,
-            urgency: urgency,
+            deadline: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+            urgency: Number(urgency),
             org_id: scope === "team" ? Number(orgId) : undefined
         };
 
@@ -185,14 +185,14 @@ const Create = () => {
 
                             <div className="form-group">
                                 <label htmlFor="day">Day</label>
-                                <select id="day" name="day" onChange={(e) => setDay(e.target.value)}>
+                                <select id="day" name="day" onChange={(e) => setDay(Number(e.target.value))}>
                                     {countMonths()}
                                 </select>
                             </div>
 
                             <div className="form-group">
                                 <label htmlFor="year">Year</label>
-                                <select id="year" name="year" onChange={(e) => setYear(e.target.value)}>
+                                <select id="year" name="year" onChange={(e) => setYear(Number(e.target.value))}>
                                     {countYears()}
                                 </select>
                             </div>
@@ -201,7 +201,7 @@ const Create = () => {
 
                     <div className="form-group form-group-full">
                         <label htmlFor="urgency">Priority Level</label>
-                        <select id="urgency" name="urgency" onChange={(e) => setUrgency(e.target.value)}>
+                        <select id="urgency" name="urgency" onChange={(e) => setUrgency(Number(e.target.value))}>
                             <option value="3">🔥 Super High</option>
                             <option value="2">📌 Medium</option>
                             <option value="1">✓ Low</option>

@@ -93,7 +93,7 @@ const reorder = (list, startIndex, endIndex) => {
 const Item = (props) =>{
 
     const link = import.meta.env.VITE_LINK
-    const nav = useNavigate(); // ✅ CORRECT: Hook at top level
+    const nav = useNavigate();
 
     const [loaded, setLoaded] = useState(false)
     const [error, setError] = useState(null)
@@ -101,7 +101,7 @@ const Item = (props) =>{
     // Simple notification system
     const showNotification = (message) => {
         setError(message);
-        setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+        setTimeout(() => setError(null), 5000);
     };
 
     // Check if environment variable exists
@@ -109,6 +109,56 @@ const Item = (props) =>{
         console.error("VITE_LINK environment variable is not defined");
         return <div>Configuration error. Please check environment variables.</div>;
     }
+
+    // Unified error handler for all API calls
+    const handleApiError = async (err, context = 'request') => {
+        console.error(`Error ${context}:`, err?.response?.data?.message || err.message);
+        
+        if (!err.response) {
+            showNotification(context === 'update' ? "Connection failed. Changes may not be saved." : "Connection failed. Check your internet connection.");
+            return;
+        }
+        
+        const status = err.response.status;
+        
+        if (status === 401 || err.response?.data?.message === 'token expired') {
+            try {
+                const res = await axios.get(`${link}/auth/refresh`, {withCredentials: true});
+                console.log("Token refreshed successfully");
+                sessionStorage.setItem("accessToken", res.data.token);
+                if (context === 'fetching tasks') {
+                    window.location.reload();
+                }
+            } catch (refreshErr) {
+                console.error("Refresh token failed:", refreshErr?.response?.data?.message || refreshErr.message);
+                if (refreshErr.response?.data?.message === "token doesn't exist") {
+                    sessionStorage.removeItem('accessToken');
+                }
+                showNotification("Session expired. Please login again.");
+                nav('/login');
+            }
+        }
+        else if (status === 403) {
+            showNotification("Access denied. Redirecting to login...");
+            setTimeout(() => nav('/login'), 2000);
+        }
+        else if (status === 400) {
+            showNotification(context === 'update' ? "Invalid data sent. Changes not saved." : "Invalid request. Please check your data.");
+        }
+        else if (status === 404) {
+            console.error(`${context} endpoint not found - check your API routes`);
+            showNotification("Service temporarily unavailable.");
+        }
+        else if (status === 429) {
+            showNotification(context === 'update' ? "Too many updates. Please wait before making more changes." : "Too many requests. Please wait a moment before trying again.");
+        }
+        else if (status >= 500) {
+            showNotification(context === 'update' ? "Server error. Changes may not be saved." : "Server error. Please try again later.");
+        }
+        else {
+            showNotification(context === 'update' ? "Failed to save changes." : "An unexpected error occurred.");
+        }
+    };
 
 
     const [state, setState]= useState({})
@@ -148,12 +198,14 @@ const Item = (props) =>{
 
                     for(let i = 0; i < tasks.length; i++){
                         const task = tasks[i];
-                        const taskId = task?.task_id ?? task?.id;
+                        const taskId = task?.task_id ?? task?.task?.ID ?? task?.id;
                         if (!task || !taskId) {
                             console.warn("Invalid task data:", task);
                             continue;
                         }
-                        const normalizedTask = { ...task, task_id: taskId };
+                        // Flatten nested task object (ordering includes { task: {...} })
+                        const flat = task.task ? { ...task, ...task.task } : task;
+                        const normalizedTask = { ...flat, task_id: taskId };
                         
                         if (normalizedTask.urgency == null){
                             newState[MAPPER[1]].push(normalizedTask);
@@ -176,68 +228,12 @@ const Item = (props) =>{
                     setState(newState);
                     setLoaded(true);
                 })
-                .catch(async err =>{
-                    console.log("Error fetching tasks:", err);
-                    
-                    // Handle network errors
-                    if (!err.response) {
-                        showNotification("Connection failed. Check your internet connection.");
-                        return;
-                    }
-                    
-                    const status = err.response.status;
-                    
-                    // Handle different HTTP status codes
-                    if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
-                        await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                            .then(res =>{
-                                console.log("Token refreshed successfully");
-                                sessionStorage.setItem("accessToken", res.data.token);
-                                // Retry the original request
-                                window.location.reload();
-                            })
-                            .catch(refreshErr => { 
-                                console.log("Refresh token failed:", refreshErr);
-                                if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
-                                    sessionStorage.removeItem('accessToken');
-                                    nav('/login');
-                                } else {
-                                    showNotification("Session expired. Please login again.");
-                                    nav('/login');
-                                }
-                            });
-                    }
-                    else if (status === 403) {
-                        showNotification("Access denied. Redirecting to login...");
-                        setTimeout(() => nav('/login'), 2000);
-                    }
-                    else if (status === 400) {
-                        showNotification("Invalid request. Please check your data.");
-                    }
-                    else if (status === 404) {
-                        console.error("API endpoint not found - check your routes");
-                        showNotification("Service temporarily unavailable.");
-                    }
-                    else if (status === 429) {
-                        showNotification("Too many requests. Please wait a moment before trying again.");
-                    }
-                    else if (status >= 500) {
-                        showNotification("Server error. Please try again later.");
-                    }
-                    else {
-                        showNotification("An unexpected error occurred.");
-                    }
-                })
+                .catch(err => handleApiError(err, 'fetching tasks'))
             }
         }
 
         getData();
-
-        
     }, [])
-
-
-    const [data, setData] = useState([])
 
     useEffect( () => {
 
@@ -268,72 +264,12 @@ const Item = (props) =>{
             const endpoint = props.dest === "team" ? "/team/tasks" : "/tasks";
 
             axios.put(`${link}${endpoint}`, data2, {headers: {Authorization : `Bearer ${sessionStorage.accessToken}`}, withCredentials:true})
-            .then(res =>{
-                console.log(res);
-                }
-            )
-            .catch(async err =>{
-                console.log("Error updating tasks:", err);
-                
-                // Handle network errors
-                if (!err.response) {
-                    showNotification("Connection failed. Changes may not be saved.");
-                    return;
-                }
-                
-                const status = err.response.status;
-                
-                // Handle different HTTP status codes
-                if (status === 401 || (err.response && err.response.data && err.response.data.message === 'token expired')) {
-                    await axios.get(`${link}/auth/refresh`, {withCredentials: true})
-                        .then(res =>{
-                            console.log("Token refreshed for update");
-                            sessionStorage.setItem("accessToken", res.data.token);
-                        })
-                        .catch(refreshErr => { 
-                            console.log("Refresh failed during update:", refreshErr);
-                            if (refreshErr.response && refreshErr.response.data && refreshErr.response.data.message === "token doesn't exist"){
-                                sessionStorage.removeItem('accessToken');
-                                nav('/login');
-                            } else {
-                                showNotification("Session expired. Please login again.");
-                                nav('/login');
-                            }
-                        });
-                }
-                else if (status === 403) {
-                    showNotification("Access denied. Redirecting to login...");
-                    setTimeout(() => nav('/login'), 2000);
-                }
-                else if (status === 400) {
-                    showNotification("Invalid data sent. Changes not saved.");
-                }
-                else if (status === 404) {
-                    console.error("Update endpoint not found - check your API routes");
-                    showNotification("Service temporarily unavailable.");
-                }
-                else if (status === 429) {
-                    showNotification("Too many updates. Please wait before making more changes.");
-                }
-                else if (status >= 500) {
-                    showNotification("Server error. Changes may not be saved.");
-                }
-                else {
-                    showNotification("Failed to save changes.");
-                }
-            }
-            )
+            .then(res => console.log(res))
+            .catch(err => handleApiError(err, 'update'))
             }
             
         update()
     }, [state])
-
-
-    // const [state, setState] = useState({
-    //     items:getItems(10),
-    //     selected:getItems(5,10),
-    //     hehe:getItems(5,15)
-    // });
 
     const id2List = {
         //ids for two lists
@@ -469,11 +405,11 @@ const Item = (props) =>{
             {/* Main Content */}
             <div className={`${props.compact ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}`}>
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="flex flex-col gap-6">
                         
                         {/* Low Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+                            <div className="bg-green-50 border-b border-green-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -485,14 +421,14 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-green-600 text-sm mt-1">Tasks that can be done when time permits</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable" state={state.low || []} urgencyColor="green"/>
                             </div>
                         </div>
 
                         {/* High Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-orange-50 border-b border-orange-100 px-6 py-4">
+                            <div className="bg-orange-50 border-b border-orange-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -504,14 +440,14 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-orange-600 text-sm mt-1">Important tasks that need attention soon</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable2" state={state.high || []} urgencyColor="orange"/>
                             </div>
                         </div>
 
                         {/* Any Priority Section */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
+                            <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -523,7 +459,7 @@ const Item = (props) =>{
                                 </div>
                                 <p className="text-blue-600 text-sm mt-1">Tasks that can be done at any time</p>
                             </div>
-                            <div className="p-4 min-h-[400px]">
+                            <div className="p-2">
                                 <Droppy id="droppable3" state={state.any || []} urgencyColor="blue"/>
                             </div>
                         </div>

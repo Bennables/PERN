@@ -44,7 +44,7 @@ const Droppy = (props) => {
     });
 
     const getListStyle = isDraggingOver => ({
-        minHeight: '300px',
+        minHeight: '50px',
         transition: 'all 0.2s ease'
     });
 
@@ -110,7 +110,7 @@ const Droppy = (props) => {
                             </Draggable>
                         ))
                     ) : (
-                        <div className={`${colors.bg} ${colors.border} ${colors.text} border-2 border-dashed rounded-lg p-8 text-center opacity-50`}>
+                        <div className={`${colors.bg} ${colors.border} ${colors.text} border-2 border-dashed rounded-lg p-0 text-center opacity-50`}>
                             <svg className="mx-auto h-8 w-8 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>

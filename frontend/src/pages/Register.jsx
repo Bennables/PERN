@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router";
 const Register = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const orgName = sessionStorage.getItem("orgName") || "";
     const nav = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -16,11 +17,18 @@ const Register = () => {
             console.log("One of these is empty");
         }
         else{
-            const link = import.meta.env.VITE_LINK;
-            const reply = await axios.post(`${link}/register`, {username: username, password: password})
-            console.log()
-            if(reply.data == "created"){
-                nav("/login")
+            try {
+                const link = import.meta.env.VITE_LINK;
+                const reply = await axios.post(`${link}/register`, {
+                    username: username,
+                    password: password,
+                    orgName: orgName || undefined
+                })
+                if(!reply.data.error){
+                    nav("/login")
+                }
+            } catch(e) {
+                console.error("Register error:", e?.response?.data?.message || e.message);
             }
         }
     }
@@ -38,6 +46,11 @@ const Register = () => {
                         </div>
                         <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
                         <p className="text-sm text-gray-600 mt-2">Join us today and get started</p>
+                        {orgName && (
+                            <p className="text-sm text-emerald-600 mt-2 font-medium">
+                                Joining: {orgName}
+                            </p>
+                        )}
                     </div>
 
                     {/* Form */}

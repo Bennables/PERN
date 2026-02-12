@@ -18,7 +18,7 @@ const createToken = async (user) =>{
 const getUserID = async(user) => { 
     const userRecord = await prisma.users.findUnique({
         where: { username: user },
-        select: { ID: true }
+        select: { ID: true, }
     });
     return userRecord?.ID;
 }
@@ -85,7 +85,6 @@ const verifyToken = async (req, res, next) => {
 }
 
 
-//TODO fix tokens not working
 
 const refreshTokens = async (refreshToken) =>{
     const verifiedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);

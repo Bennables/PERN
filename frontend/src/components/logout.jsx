@@ -17,9 +17,7 @@ const Logout = () =>
 
         const res = axios.post(`${link}/logout`, {'token': sessionStorage.getItem("accessToken")}, {'withCredentials' : true}).catch(
             (e)=>{
-                console.log(e);
-                console.log("WE HAD AN ERROR")
-
+                console.error("Logout error:", e?.response?.data?.message || e.message);
             }
         )
         sessionStorage.clear();

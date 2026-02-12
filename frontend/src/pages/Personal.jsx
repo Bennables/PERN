@@ -15,13 +15,16 @@ const Personal = () => {
     useEffect(() => {
         const checkOrg = async () => {
             try {
-                await axios.get(`${link}/team`, {
+                const a = await axios.get(`${link}/team`, {
                     headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken")}` },
                     withCredentials: true
                 });
+                console.log(a)
                 setHasOrg(true);
             } catch (err) {
                 const msg = err?.response?.data?.message;
+                //! NEW ERROR, if not logged inm will not save
+                console.error("Personal org check error:", msg || err.message);
                 if (err?.response?.status === 400 && msg === "User is not part of any organization") {
                     setHasOrg(false);
                 } else if (err?.response?.status === 401 || msg === "token expired") {
@@ -78,21 +81,7 @@ const Personal = () => {
                     <Item dest={"tasks"} compact />
                 </section>
 
-                {/* Org tasks */}
-                {hasOrg && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-slate-900">Organization</h2>
-                            <button
-                                className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 hover:bg-slate-50"
-                                onClick={() => nav("/create")}
-                            >
-                                Add task
-                            </button>
-                        </div>
-                        <Item dest={"team"} compact />
-                    </section>
-                )}
+            
             </div>
         </div>
     )

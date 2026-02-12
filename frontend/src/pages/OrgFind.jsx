@@ -26,12 +26,12 @@ const OrgFind = () => {
       });
 
       // Persist selected org for later pages (login/register)
-      sessionStorage.setItem("orgId", String(res.data.org.id));
+      sessionStorage.setItem("orgId", String(res.data.org.ID));
       sessionStorage.setItem("orgName", res.data.org.name);
 
       nav("/login");
     } catch (err) {
-      console.log("Error finding org:", err);
+      console.error("Error finding org:", err?.response?.data?.message || err.message);
       if (err.response?.status === 404) {
         setError("Organization not found. Check the name or create a new one.");
       } else {
@@ -93,9 +93,15 @@ const OrgFind = () => {
 
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-gray-600">
+              Need an account?{" "}
+              <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+                Create one
+              </Link>
+            </p>
+            <p className="text-sm text-gray-600">
               Don&apos;t have an org yet?{" "}
               <Link to="/org/create" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
-                Create one
+                Create org
               </Link>
             </p>
             <p className="text-xs text-gray-500">
