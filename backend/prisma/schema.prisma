@@ -41,6 +41,7 @@ model tasks {
   ID        Int       @id @default(autoincrement())
   owner_id  Int?
   org_id    Int?
+  description String? 
   task_name String    @db.VarChar(32)
   deadline  DateTime
   urgency   Int
