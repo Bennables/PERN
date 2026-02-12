@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 // Import controllers
 import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks, updateTeamTasks } from './controllers/others.js';
+import { createSubtask, updateSubtask, getSubtasks, deleteSubtask } from './controllers/subtasks.js';
 import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
 import connection from './helpers/connect.js';
 import { redisClient } from './helpers/redis.js';
@@ -117,6 +118,12 @@ const getTeamTasks = async(req, res) =>{
 
 app.get("/team", getTeamTasks);
 app.put("/team/tasks", updateTeamTasks);
+
+// ===== SUBTASK ROUTES =====
+app.post("/subtasks", createSubtask);  // Create a new subtask
+app.put("/subtasks/:id", updateSubtask);  // Update a subtask
+app.get("/tasks/:task_id/subtasks", getSubtasks);  // Get all subtasks for a task
+app.delete("/subtasks/:id", deleteSubtask);  // Delete a subtask
 
 // ===== ORGANIZATION ROUTES =====
 const createOrg = async (req, res) => {
