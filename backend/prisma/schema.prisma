@@ -19,6 +19,7 @@ model users {
   ownedTasks tasks[]       @relation("OwnedTasks")
   orgMembers org_members[]
   ordering   ordering[]
+  subTaskMemberships SubTaskMember[]
 }
 
 model org {
@@ -43,15 +44,27 @@ model tasks {
   ID        Int       @id @default(autoincrement())
   owner_id  Int?
   org_id    Int?
+  description String? 
   task_name String    @db.VarChar(32)
   deadline  DateTime
   urgency   Int
 
   owner     users?    @relation("OwnedTasks", fields: [owner_id], references: [ID])
   org       org?      @relation(fields: [org_id], references: [ID])
+  subTask subTask[]
   ordering  ordering[]
 }
 
+model subTask {
+  ID          Int       @id @default(autoincrement())
+  description String?
+  task_id     Int
+
+  task        tasks     @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+
+  // users on this subtask (via join table)
+  members     SubTaskMember[]
+}
 model ordering {
   user_id Int
   task_id Int
@@ -61,7 +74,9 @@ model ordering {
   task    tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
   
 
+
   @@id([user_id, task_id])
+
 }
 
 model levels {
@@ -69,4 +84,15 @@ model levels {
   lvlXP Int
 
   @@id([lvl])
+}
+
+
+model SubTaskMember {
+  subtask_id Int
+  user_id    Int
+
+  subtask    subTask @relation(fields: [subtask_id], references: [ID], onDelete: Cascade)
+  user       users   @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+
+  @@id([subtask_id, user_id])
 }
