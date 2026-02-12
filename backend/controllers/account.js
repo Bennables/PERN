@@ -1,5 +1,5 @@
 import { createToken } from "../helpers/helpers.js";
-import connection from "../helpers/connect.js";
+import { prisma } from "../lib/prisma.js";
 import argon2 from 'argon2';
 import Cookies from 'js-cookie';
 
@@ -11,10 +11,15 @@ const login = async(req, res) =>{
     const password = req.body.password;
     const username = req.body.username;
 
-    const hashed_password = (await connection.query("SELECT * FROM users WHERE username=$1;", [username])).rows[0].pwhashed;
-    // console.log(hashed_password);
+    const user = await prisma.users.findUnique({
+        where: { username }
+    });
 
-    const verified = await  argon2.verify(hashed_password, password, {secret: Buffer.from(process.env.SECRET_PEPPER)})
+    if (!user) {
+        return res.status(400).send({"message": "User not found"});
+    }
+
+    const verified = await argon2.verify(user.pwHashed, password, {secret: Buffer.from(process.env.SECRET_PEPPER)})
     console.log("THE PASS IS " + (verified ? "correct" : "incorrect"))
 
 
@@ -35,15 +40,25 @@ const register = async (req,res) =>{
     const password = req.body.password.toString();
 
     //check for existing username
-    const existing = await connection.query("SELECT * FROM users WHERE username=$1", [username])
-    if (existing.rows.length > 0){
+    const existing = await prisma.users.findUnique({
+        where: { username }
+    });
+    
+    if (existing){
         console.log("DUPLICATE USERNAME")
         res.status(400).send("THis username already exists")
         return;
     }
 
     const hash = await argon2.hash(password, {secret: Buffer.from(process.env.SECRET_PEPPER), type: argon2.argon2id})
-    const psql_response = await connection.query(`INSERT INTO users (username, pwHashed) VALUES ($1, $2);`, [username, hash]);
+    await prisma.users.create({
+        data: {
+            username,
+            pwHashed: hash,
+            lvl: 1,
+            currXp: 0
+        }
+    });
     res.status(200).send("created")
 }
 

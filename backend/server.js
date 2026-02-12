@@ -7,8 +7,8 @@ import cookieParser from 'cookie-parser';
 import { login, register } from './controllers/account.js';
 import { connect, getTasks, getUsers, new_refresh, updateTasks, updateTeamTasks } from './controllers/others.js';
 import { verifyToken, getUserID, getUserOrgID } from './helpers/helpers.js';
-import connection from './helpers/connect.js';
-import { redisClient } from './helpers/redis.js';
+import { prisma } from './lib/prisma.js';
+import { redisClient } from './lib/redis.js';
 
 const app = express();
 
@@ -29,22 +29,32 @@ app.get("/auth/refresh", new_refresh);
 app.get("/org/find", async (req, res) => {
     try {
         const name = (req.query.name || "").toString().trim();
+        // console.log(req.query)
+        // console.log(req)
 
         if (!name) {
             return res.status(400).send({ message: "Organization name is required" });
         }
 
-        // Case-insensitive match
-        const result = await connection.query(
-            "SELECT id, name FROM org WHERE LOWER(name) = LOWER($1) LIMIT 1",
-            [name]
-        );
+        // Case-insensitive match using Prisma
+        const result = await prisma.org.findFirst({
+            where: {
+                name: {
+                    equals: name,
+                    mode: 'insensitive'
+                }
+            },
+            select: {
+                ID: true,
+                name: true
+            }
+        });
 
-        if (result.rows.length === 0) {
+        if (!result) {
             return res.status(404).send({ message: "Organization not found" });
         }
 
-        return res.status(200).send({ message: "found", org: result.rows[0] });
+        return res.status(200).send({ message: "found", org: result });
     } catch (error) {
         console.log("Error finding organization:", error);
         return res.status(500).send({ message: "Failed to find organization" });
@@ -91,28 +101,46 @@ app.put("/tasks", updateTasks)
 
 const getTeamTasks = async(req, res) =>{
     // Get user's organization through org_members table
-    const user_id = (await connection.query("SELECT ID FROM users WHERE username=$1", [req.user])).rows[0].id;
-    const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id=$1", [user_id]);
+    const userRecord = await prisma.users.findUnique({
+        where: { username: req.user }
+    });
+
+    if (!userRecord) {
+        return res.status(404).send({"message": "User not found"});
+    }
+
+    const user_id = userRecord.ID;
+
+    const org_member = await prisma.org_members.findFirst({
+        where: { user_id }
+    });
     
-    if (org_result.rows.length === 0) {
+    if (!org_member) {
         return res.status(400).send({"message": "User is not part of any organization"});
     }
     
-    const org_id = org_result.rows[0].org_id;
+    const org_id = org_member.org_id;
     console.log(org_id)
     console.log("THE ORG ID IS: " + org_id);
 
     // Join ordering so org tasks respect per-user ordering
-    const teamTasks = await connection.query(
-        "SELECT tasks.id AS task_id, tasks.org_id, tasks.task_name, tasks.deadline, tasks.urgency, ordering.ind " +
-        "FROM ordering INNER JOIN tasks ON tasks.id = ordering.task_id " +
-        "WHERE ordering.user_id = $1 AND tasks.org_id = $2 " +
-        "ORDER BY urgency, ind",
-        [user_id, org_id]
-    );
-    // console.log(teamTasks)
+    const teamTasks = await prisma.ordering.findMany({
+        where: {
+            user_id,
+            task: {
+                org_id
+            }
+        },
+        include: {
+            task: true
+        },
+        orderBy: [
+            { task: { urgency: 'asc' } },
+            { ind: 'asc' }
+        ]
+    });
 
-    res.status(200).send({"message": "success", "tasks": teamTasks.rows})
+    res.status(200).send({"message": "success", "tasks": teamTasks})
 }
 
 app.get("/team", getTeamTasks);
@@ -131,32 +159,29 @@ const createOrg = async (req, res) => {
         const orgName = name.trim();
 
         // Check for existing org name
-        const existing = await connection.query(
-            "SELECT ID FROM org WHERE name = $1",
-            [orgName]
-        );
+        const existing = await prisma.org.findUnique({
+            where: { name: orgName }
+        });
 
-        if (existing.rows.length > 0) {
+        if (existing) {
             return res.status(400).send({ message: "Organization name already exists" });
         }
 
         const user_id = await getUserID(req.user);
 
-        // Create org
-        const created = await connection.query(
-            "INSERT INTO org (name) VALUES ($1) RETURNING ID",
-            [orgName]
-        );
+        // Create org and add user as member in a transaction
+        const created = await prisma.org.create({
+            data: {
+                name: orgName,
+                members: {
+                    create: {
+                        user_id
+                    }
+                }
+            }
+        });
 
-        const org_id = created.rows[0].id;
-
-        // Add current user as member
-        await connection.query(
-            "INSERT INTO org_members (org_id, user_id) VALUES ($1, $2)",
-            [org_id, user_id]
-        );
-
-        res.status(201).send({ message: "Organization created", org_id });
+        res.status(201).send({ message: "Organization created", org_id: created.ID });
     } catch (error) {
         console.log("Error creating organization:", error);
         res.status(500).send({ message: "Failed to create organization" });
@@ -170,32 +195,40 @@ const createTask = async (req, res) =>{
     try {
         const scope = req.body.scope;
         const taskName = req.body.name;
-        const deadline = req.body.deadline || null;
-        const urgency = req.body.urgency || 1; //may need to parseint()
+        const deadline = req.body.deadline ? new Date(req.body.deadline) : null;
+        const urgency = req.body.urgency || 1;
 
         if (scope == "personal"){
             const user_id = await getUserID(req.user);
-            const result = await connection.query(
-                "INSERT INTO tasks (owner_id, task_name, deadline, urgency) VALUES ($1, $2, $3, $4) RETURNING *", 
-                [user_id, taskName, deadline, urgency] // Default to low priority (1)
-            );
             
-            // Also create ordering entry for the user
-            await connection.query(
-                "INSERT INTO ordering (user_id, task_id, ind) VALUES ($1, $2, $3)", 
-                [user_id, result.rows[0].id, 0] // Default index 0
-            );
+            const result = await prisma.tasks.create({
+                data: {
+                    owner_id: user_id,
+                    task_name: taskName,
+                    deadline,
+                    urgency,
+                    ordering: {
+                        create: {
+                            user_id,
+                            ind: 0
+                        }
+                    }
+                }
+            });
             
-            res.status(201).send({"message": "Personal task created successfully", "task": result.rows[0]});
+            res.status(201).send({"message": "Personal task created successfully", "task": result});
         }
         else{
             // Team task: prefer membership org, otherwise use org_id from client (selected on OrgFind)
             const user_id = await getUserID(req.user);
 
             let org_id = null;
-            const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id=$1", [user_id]);
-            if (org_result.rows.length > 0) {
-                org_id = org_result.rows[0].org_id;
+            const org_member = await prisma.org_members.findFirst({
+                where: { user_id }
+            });
+
+            if (org_member) {
+                org_id = org_member.org_id;
             } else if (req.body.org_id) {
                 org_id = Number(req.body.org_id);
                 if (!Number.isFinite(org_id)) {
@@ -203,27 +236,40 @@ const createTask = async (req, res) =>{
                 }
 
                 // Auto-join user to selected org (safe: PK prevents duplicates)
-                await connection.query(
-                    "INSERT INTO org_members (org_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-                    [org_id, user_id]
-                );
+                await prisma.org_members.upsert({
+                    where: {
+                        org_id_user_id: {
+                            org_id,
+                            user_id
+                        }
+                    },
+                    update: {},
+                    create: {
+                        org_id,
+                        user_id
+                    }
+                });
             } else {
                 return res.status(400).send({ message: "User is not part of any organization" });
             }
             
             // Insert team task
-            const result = await connection.query(
-                "INSERT INTO tasks (org_id, task_name, deadline, urgency) VALUES ($1, $2, $3, $4) RETURNING *", 
-                [org_id, taskName, deadline, urgency] // Default to low priority (1)
-            );
-            
-            // Create ordering entry for this user and team task
-            await connection.query(
-                "INSERT INTO ordering (user_id, task_id, ind) VALUES ($1, $2, $3)",
-                [user_id, result.rows[0].id, 0]
-            );
+            const result = await prisma.tasks.create({
+                data: {
+                    org_id,
+                    task_name: taskName,
+                    deadline,
+                    urgency,
+                    ordering: {
+                        create: {
+                            user_id,
+                            ind: 0
+                        }
+                    }
+                }
+            });
 
-            res.status(201).send({"message": "Team task created successfully", "task": result.rows[0]});
+            res.status(201).send({"message": "Team task created successfully", "task": result});
         }
     } catch (error) {
         console.log("Error creating task:", error);
