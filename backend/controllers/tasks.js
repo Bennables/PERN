@@ -342,9 +342,9 @@ const createTask = async (req, res) => {
             res.status(201).json({ "error": false, "message": "Team task created successfully", "task": result });
         }
     } catch (error) {
-        console.log("Error creating task:", error);
-        res.status(500).json({ "error": true, "message": "Failed to create task" });
-    }
-}
+                                    console.log("Error creating task:", error);
+                                    res.status(500).json({ "error": true, "message": "Failed to create task" });
+                                }
+                            }
 
 export { getTasks, getTaskById, updateTasks, getTeamTasks, updateTeamTasks, createTask };

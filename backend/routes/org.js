@@ -1,6 +1,6 @@
-import { Router } from 'express';
-import { findOrg, createOrg } from '../controllers/org.js';
-import { verifyToken } from '../helpers/helpers.js';
+import { Router } from "express";
+import { findOrg, createOrg } from "../controllers/org.js";
+import { verifyToken } from "../helpers/helpers.js";
 
 const router = Router();
 
