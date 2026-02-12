@@ -11,6 +11,8 @@ model users {
   ID        Int            @id @default(autoincrement())
   username  String         @unique @db.VarChar(32)
   pwHashed  String         @db.VarChar(128)
+
+
   lvl       Int
   currXp    Int
 
@@ -70,6 +72,7 @@ model ordering {
 
   user    users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
   task    tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+  
 
 
   @@id([user_id, task_id])

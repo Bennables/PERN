@@ -34,7 +34,7 @@ const OrgCreate = () => {
             // On success, go to team board
             nav("/team");
         } catch (err) {
-            console.log("Error creating organization:", err);
+            console.error("Error creating org:", err?.response?.data?.message || err.message);
 
             if (err.response) {
                 if (err.response.status === 400 && err.response.data?.message) {

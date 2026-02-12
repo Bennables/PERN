@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { redisClient }from "./redis.js"
-import connection from './connect.js';
+import { redisClient }from "../lib/redis.js"
+import { prisma } from '../lib/prisma.js';
 import {v4 as uuidv4} from 'uuid';
 
 const createToken = async (user) =>{
@@ -16,13 +16,27 @@ const createToken = async (user) =>{
 
 
 const getUserID = async(user) => { 
-    return (await connection.query("SELECT ID FROM users WHERE username = $1", [user])).rows[0].id
+    const userRecord = await prisma.users.findUnique({
+        where: { username: user },
+        select: { ID: true, }
+    });
+    return userRecord?.ID;
 }
 
 const getUserOrgID = async(user) => { 
-    const user_id = (await connection.query("SELECT ID FROM users WHERE username = $1", [user])).rows[0].id;
-    const org_result = await connection.query("SELECT org_id FROM org_members WHERE user_id = $1", [user_id]);
-    return org_result.rows.length > 0 ? org_result.rows[0].org_id : null;
+    const userRecord = await prisma.users.findUnique({
+        where: { username: user },
+        select: { ID: true }
+    });
+    
+    if (!userRecord) return null;
+    
+    const org_member = await prisma.org_members.findFirst({
+        where: { user_id: userRecord.ID },
+        select: { org_id: true }
+    });
+    
+    return org_member?.org_id ?? null;
 }
 
 
@@ -71,7 +85,6 @@ const verifyToken = async (req, res, next) => {
 }
 
 
-//TODO fix tokens not working
 
 const refreshTokens = async (refreshToken) =>{
     const verifiedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
