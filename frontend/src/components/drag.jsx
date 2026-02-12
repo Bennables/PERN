@@ -8,7 +8,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 
 
-const Droppy = (props) => { 
+const Drag = (props) => { 
     const state = props.state;
     const urgencyColor = props.urgencyColor || 'blue';
 
@@ -125,4 +125,4 @@ const Droppy = (props) => {
     )
 }
 
-export default Droppy;
+export default Drag;
