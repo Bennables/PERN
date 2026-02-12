@@ -11,6 +11,7 @@ import Team from './pages/Team';
 import Create from './pages/Create';
 import OrgCreate from './pages/OrgCreate';
 import OrgFind from './pages/OrgFind';
+import TaskView from './pages/TaskView';
 
 
 const router = createBrowserRouter([
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
   {path:"/create", element: <Create/>},
   {path:"/org/create", element: <OrgCreate/>},
   {path:"/org/find", element: <OrgFind/>},
+  {path:"/tasks/:id", element: <TaskView/>},
   {path:"/logout"}
 ])
 

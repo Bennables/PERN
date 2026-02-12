@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import Droppy from './drag';
+import Drag from './drag';
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 
