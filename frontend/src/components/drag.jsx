@@ -1,6 +1,7 @@
 import axios from "axios"
 import { useState } from "react";
 import { useEffect } from "react"
+import { useNavigate } from "react-router";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
        
@@ -8,7 +9,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 
 
-const Droppy = (props) => { 
+const Drag = (props) => { 
+    const nav = useNavigate();
     const state = props.state;
     const urgencyColor = props.urgencyColor || 'blue';
 
@@ -78,10 +80,16 @@ const Droppy = (props) => {
                                             snapshot.isDragging,
                                             provided.draggableProps.style
                                         )}
+                                        onClick={(e) => {
+                                            // Only navigate if not dragging
+                                            if (!snapshot.isDragging) {
+                                                nav(`/tasks/${item.task_id}`);
+                                            }
+                                        }}
                                         className={`
                                             ${colors.bg} ${colors.border} ${colors.text}
                                             border rounded-lg p-4 mb-3 shadow-sm
-                                            ${colors.hover} cursor-move
+                                            ${colors.hover} cursor-pointer
                                             transition-all duration-200 ease-in-out
                                             ${snapshot.isDragging ? 
                                                 `${colors.dragging} shadow-lg transform rotate-2 scale-105` : 
@@ -125,4 +133,4 @@ const Droppy = (props) => {
     )
 }
 
-export default Droppy;
+export default Drag;

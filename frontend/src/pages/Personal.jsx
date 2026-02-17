@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import Item from "../components/Dragger";
+import DragContext from "../components/Dragger";
 import Logout from "../components/logout";
 
 
@@ -78,7 +78,7 @@ const Personal = () => {
                             Add task
                         </button>
                     </div>
-                    <Item dest={"tasks"} compact />
+                    <DragContext dest={"tasks"} compact />
                 </section>
 
             

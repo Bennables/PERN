@@ -28,6 +28,72 @@ const getTasks = async (req, res) => {
     res.status(200).json({ "error": false, "message": "success", "tasks": tasks })
 }
 
+const getTaskById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const taskId = parseInt(id, 10);
+
+        if (!taskId || isNaN(taskId)) {
+            return res.status(400).json({ "error": true, "message": "Invalid task ID" });
+        }
+
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user }
+        });
+
+        if (!userRecord) {
+            return res.status(404).json({ "error": true, "message": "User not found" });
+        }
+
+        const user_id = userRecord.ID;
+
+        // Find the task and check if user has access
+        const task = await prisma.tasks.findUnique({
+            where: { ID: taskId },
+            include: {
+                owner: {
+                    select: { ID: true, username: true }
+                },
+                org: {
+                    select: { ID: true, name: true }
+                }
+            }
+        });
+
+        if (!task) {
+            return res.status(404).json({ "error": true, "message": "Task not found" });
+        }
+
+        // Check access: user owns the task OR user is in the task's org
+        let hasAccess = false;
+
+        if (task.owner_id === user_id) {
+            hasAccess = true;
+        } else if (task.org_id) {
+            const orgMember = await prisma.org_members.findUnique({
+                where: {
+                    org_id_user_id: {
+                        org_id: task.org_id,
+                        user_id: user_id
+                    }
+                }
+            });
+            if (orgMember) {
+                hasAccess = true;
+            }
+        }
+
+        if (!hasAccess) {
+            return res.status(403).json({ "error": true, "message": "Access denied" });
+        }
+
+        res.status(200).json({ "error": false, "message": "success", "task": task });
+    } catch (error) {
+        console.log("Error fetching task:", error);
+        res.status(500).json({ "error": true, "message": "Failed to fetch task" });
+    }
+}
+
 const updateTasks = async (req, res) => {
     try {
         const userRecord = await prisma.users.findUnique({
@@ -276,9 +342,9 @@ const createTask = async (req, res) => {
             res.status(201).json({ "error": false, "message": "Team task created successfully", "task": result });
         }
     } catch (error) {
-        console.log("Error creating task:", error);
-        res.status(500).json({ "error": true, "message": "Failed to create task" });
-    }
-}
+                                    console.log("Error creating task:", error);
+                                    res.status(500).json({ "error": true, "message": "Failed to create task" });
+                                }
+                            }
 
-export { getTasks, updateTasks, getTeamTasks, updateTeamTasks, createTask };
+export { getTasks, getTaskById, updateTasks, getTeamTasks, updateTeamTasks, createTask };

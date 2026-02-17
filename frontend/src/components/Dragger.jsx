@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import Droppy from './drag';
+import Drag from './drag';
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 
@@ -90,7 +90,7 @@ const reorder = (list, startIndex, endIndex) => {
     return result;
 }
 
-const Item = (props) =>{
+const DragContext = (props) =>{
 
     const link = import.meta.env.VITE_LINK
     const nav = useNavigate();
@@ -422,7 +422,7 @@ const Item = (props) =>{
                                 <p className="text-green-600 text-sm mt-1">Tasks that can be done when time permits</p>
                             </div>
                             <div className="p-2">
-                                <Droppy id="droppable" state={state.low || []} urgencyColor="green"/>
+                                <Drag id="droppable" state={state.low || []} urgencyColor="green"/>
                             </div>
                         </div>
 
@@ -441,7 +441,7 @@ const Item = (props) =>{
                                 <p className="text-orange-600 text-sm mt-1">Important tasks that need attention soon</p>
                             </div>
                             <div className="p-2">
-                                <Droppy id="droppable2" state={state.high || []} urgencyColor="orange"/>
+                                <Drag id="droppable2" state={state.high || []} urgencyColor="orange"/>
                             </div>
                         </div>
 
@@ -460,7 +460,7 @@ const Item = (props) =>{
                                 <p className="text-blue-600 text-sm mt-1">Tasks that can be done at any time</p>
                             </div>
                             <div className="p-2">
-                                <Droppy id="droppable3" state={state.any || []} urgencyColor="blue"/>
+                                <Drag id="droppable3" state={state.any || []} urgencyColor="blue"/>
                             </div>
                         </div>
 
@@ -483,5 +483,5 @@ const Item = (props) =>{
 
 }
 
-export default Item
+export default DragContext
 
