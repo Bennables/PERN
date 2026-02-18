@@ -3,7 +3,7 @@ import cors from 'cors'
 import * as dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import * as http from 'node:http'
-import { WebSocketServer } from 'ws'
+import { Server as SocketIOServer } from 'socket.io'
 
 import authRoutes from './routes/auth.js'
 import taskRoutes from './routes/tasks.js'
@@ -13,12 +13,37 @@ dotenv.config()
 
 const app = express()
 const server = http.createServer(app)
-const wsServer = new WebSocketServer({ server })
+const io = new SocketIOServer(server, {
+    cors: { origin: 'http://localhost:5173', credentials: true },
+})
 
-wsServer.on('connection', (socket) => {
-    console.log('WebSocket client connected')
-    socket.on('message', (data) => {
-        console.log('Received:', data.toString())
+io.on('connection', (socket) => {
+    console.log('Socket.IO client connected', socket.id)
+
+    socket.on('chat:join', (convoId: string | number) => {
+        const room = `convo:${convoId}`
+        socket.join(room)
+    })
+
+    socket.on('chat:message', (data: { convoId?: string | number; text: string }) => {
+        const convoId = data.convoId
+        const text = data.text ?? ''
+        const payload = {
+            text,
+            message: text,
+            conversationId: convoId,
+            createdAt: new Date().toISOString(),
+            senderSocketId: socket.id,
+        }
+        if (convoId != null) {
+            io.to(`convo:${convoId}`).emit('chat:message', payload)
+        } else {
+            socket.emit('chat:message', payload)
+        }
+    })
+
+    socket.on('disconnect', () => {
+        console.log('Socket.IO client disconnected', socket.id)
     })
 })
 
