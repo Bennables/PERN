@@ -215,11 +215,7 @@ const DragContext = ({ dest, compact }: DragContextProps) => {
         state,
         ID_TO_LIST
       )
-      setState({
-        low: newResult.low,
-        high: newResult.high,
-        any: newResult.any,
-      })
+      setState(newResult)
     }
   }
 

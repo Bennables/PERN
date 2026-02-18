@@ -18,7 +18,7 @@ const Create = () => {
   const [scope, setScope] = useState<'personal' | 'team'>('personal')
   const [month, setMonth] = useState(1)
   const [day, setDay] = useState(1)
-  const [year, setYear] = useState(2025)
+  const [year, setYear] = useState(() => new Date().getFullYear())
   const [urgency, setUrgency] = useState(1)
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -158,7 +158,7 @@ const Create = () => {
             <div className="form-row-three">
               <div className="form-group">
                 <label htmlFor="month">Month</label>
-                <select id="month" onChange={handleMonthChange} name="month">
+                <select id="month" value={MONTH_LIST[month - 1]} onChange={handleMonthChange} name="month">
                   {MONTH_LIST.map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
