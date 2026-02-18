@@ -13,7 +13,7 @@ export interface ChatMessage {
     isOwn?: boolean
 }
 
-export default function Chatbox() {
+export default function Chatbox(props: any) {
     const socketRef = useRef<Socket | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -21,7 +21,7 @@ export default function Chatbox() {
     const [connectionStatus, setConnectionStatus] = useState<
         'connected' | 'connecting' | 'disconnected'
     >('disconnected')
-    const convoId = useParams().id ?? ''
+    const convoId = props.taskId
 
     useEffect(() => {
         setConnectionStatus('connecting')
@@ -42,23 +42,33 @@ export default function Chatbox() {
             setConnectionStatus('disconnected')
         })
 
-        socket.on('chat:message', (data: { text?: string; message?: string; senderId?: string; senderName?: string; senderSocketId?: string; createdAt?: string }) => {
-            const text = data.text ?? data.message ?? ''
-            if (!text) return
-            // Skip echo of our own message (we added it optimistically)
-            if (data.senderSocketId === socket.id) return
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-                    text,
-                    isOwn: false,
-                    senderId: data.senderId,
-                    senderName: data.senderName,
-                    createdAt: data.createdAt ?? new Date().toISOString(),
-                },
-            ])
-        })
+        socket.on(
+            'chat:message',
+            (data: {
+                text?: string
+                message?: string
+                senderId?: string
+                senderName?: string
+                senderSocketId?: string
+                createdAt?: string
+            }) => {
+                const text = data.text ?? data.message ?? ''
+                if (!text) return
+                // Skip echo of our own message (we added it optimistically)
+                if (data.senderSocketId === socket.id) return
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                        text,
+                        isOwn: false,
+                        senderId: data.senderId,
+                        senderName: data.senderName,
+                        createdAt: data.createdAt ?? new Date().toISOString(),
+                    },
+                ])
+            }
+        )
 
         return () => {
             socket.removeAllListeners()
@@ -76,7 +86,10 @@ export default function Chatbox() {
         const socket = socketRef.current
         if (!trimmed || !socket?.connected) return
 
-        socket.emit('chat:message', { convoId: convoId || undefined, text: trimmed })
+        socket.emit('chat:message', {
+            convoId: convoId || undefined,
+            text: trimmed,
+        })
         setMessages((prev) => [
             ...prev,
             {
