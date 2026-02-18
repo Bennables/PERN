@@ -11,23 +11,26 @@ import Create from './pages/Create'
 import OrgCreate from './pages/OrgCreate'
 import OrgFind from './pages/OrgFind'
 import TaskView from './pages/TaskView'
+import Chatbox from './components/chatbox'
 
 const router = createBrowserRouter([
-  { path: '/', element: <OrgFind /> },
-  { path: '/login', element: <Login /> },
-  { path: '/register', element: <Register /> },
-  { path: '/team', element: <Team /> },
-  { path: '/personal', element: <Personal /> },
-  { path: '/drag', element: <Item dest="tasks" /> },
-  { path: '/create', element: <Create /> },
-  { path: '/org/create', element: <OrgCreate /> },
-  { path: '/org/find', element: <OrgFind /> },
-  { path: '/tasks/:id', element: <TaskView /> },
-  { path: '/logout' },
+    { path: '/', element: <OrgFind /> },
+    { path: '/login', element: <Login /> },
+    { path: '/register', element: <Register /> },
+    { path: '/team', element: <Team /> },
+    { path: '/personal', element: <Personal /> },
+    { path: '/drag', element: <Item dest="tasks" /> },
+    { path: '/create', element: <Create /> },
+    { path: '/org/create', element: <OrgCreate /> },
+    { path: '/org/find', element: <OrgFind /> },
+    { path: '/tasks/:id', element: <TaskView /> },
+    { path: '/chat/:id', element: <Chatbox /> },
+
+    { path: '/logout' },
 ])
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>
+    <StrictMode>
+        <RouterProvider router={router} />
+    </StrictMode>
 )
