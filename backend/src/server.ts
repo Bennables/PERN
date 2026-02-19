@@ -9,12 +9,13 @@ import authRoutes from './routes/auth.js'
 import taskRoutes from './routes/tasks.js'
 import orgRoutes from './routes/org.js'
 
+
 dotenv.config()
 
 const app = express()
 const server = http.createServer(app)
 const io = new SocketIOServer(server, {
-    cors: { origin: process.env.FRONTEND_URL, credentials: true },
+    cors: { origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true },
 })
 
 io.on('connection', (socket) => {
@@ -53,7 +54,7 @@ io.on('connection', (socket) => {
 app.use(express.json())
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL,
+        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
         credentials: true,
     })
 )
@@ -62,6 +63,7 @@ app.use(authRoutes)
 app.use(orgRoutes)
 app.use(taskRoutes)
 
-server.listen(process.env.SERVER_PORT, () => {
-    console.log("We're connected \n http://localhost:3333")
+const port = Number(process.env.SERVER_PORT) || 3333
+server.listen(port, () => {
+    console.log("We're connected \n http://localhost:" + port)
 })

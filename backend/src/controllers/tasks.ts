@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { getUserID } from '../helpers/helpers.js'
+import 'dotenv/config'
 
 const getTasks = async (req, res) => {
     const user = req.user
@@ -73,7 +74,7 @@ const getTaskById = async (req, res) => {
         if (task.owner_id === user_id) {
             hasAccess = true
         } else if (task.org_id) {
-            const orgMember = await prisma.org_members.findUnique({
+            const orgMember = await prisma.org_Members.findUnique({
                 where: {
                     org_id_user_id: {
                         org_id: task.org_id,
@@ -167,7 +168,7 @@ const getTeamTasks = async (req, res) => {
 
     const user_id = userRecord.ID
 
-    const org_member = await prisma.org_members.findFirst({
+    const org_member = await prisma.org_Members.findFirst({
         where: { user_id },
     })
 
@@ -211,7 +212,7 @@ const updateTeamTasks = async (req, res) => {
 
         const user_id = userRecord.ID
 
-        const org_member = await prisma.org_members.findFirst({
+        const org_member = await prisma.org_Members.findFirst({
             where: { user_id },
         })
 
@@ -307,7 +308,7 @@ const createTask = async (req, res) => {
             const user_id = await getUserID(req.user)
 
             let org_id = null
-            const org_member = await prisma.org_members.findFirst({
+            const org_member = await prisma.org_Members.findFirst({
                 where: { user_id },
             })
 
@@ -321,7 +322,7 @@ const createTask = async (req, res) => {
                         .json({ error: true, message: 'Invalid org_id' })
                 }
 
-                await prisma.org_members.upsert({
+                await prisma.org_Members.upsert({
                     where: {
                         org_id_user_id: {
                             org_id,
@@ -355,7 +356,7 @@ const createTask = async (req, res) => {
                     },
                 },
             })
-            const orgUsers = await prisma.org_members.findMany({
+            const orgUsers = await prisma.org_Members.findMany({
                 where: {
                     org_id: org_id,
                 },

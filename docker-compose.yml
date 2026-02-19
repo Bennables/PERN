@@ -12,6 +12,13 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:password@db:5432/pern
       REDIS_URL: redis://redis:6379
+      SERVER_PORT: "3333"
+      FRONTEND_URL: http://localhost:5173
+      # Set SECRET_PEPPER for auth (register/login). Uncomment or use backend/.env.
+      # SECRET_PEPPER: your-pepper-here
+    env_file:
+      - path: ./backend/.env
+        required: false
     depends_on:
       db:
         condition: service_healthy
@@ -26,7 +33,7 @@ services:
       args:
         VITE_LINK: http://localhost:3333
     ports:
-      - "5175:5173"
+      - "5173:5173"
     depends_on:
       - backend
     restart: unless-stopped

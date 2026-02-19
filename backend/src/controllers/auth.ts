@@ -2,6 +2,7 @@ import { createToken, refreshTokens } from '../helpers/helpers.js'
 import { prisma } from '../lib/prisma.js'
 import { redisClient } from '../lib/redis.js'
 import * as argon2 from 'argon2'
+import 'dotenv/config'
 
 const login = async (req, res) => {
     try {
@@ -20,13 +21,15 @@ const login = async (req, res) => {
         })
 
         if (!user) {
-            return res.status(404).json({ error: true, message: 'User not found' })
+            return res
+                .status(404)
+                .json({ error: true, message: 'User not found' })
         }
 
         if (!process.env.SECRET_PEPPER) {
             return res.status(500).json({
                 error: true,
-                message: 'Server configuration error',
+                message: 'WE ARE MISSING PEPPER',
             })
         }
 
@@ -35,7 +38,9 @@ const login = async (req, res) => {
         })
 
         if (!verified) {
-            return res.status(400).json({ error: true, message: 'Invalid password' })
+            return res
+                .status(400)
+                .json({ error: true, message: 'Invalid password' })
         }
 
         const tokens = await createToken(username)
@@ -60,8 +65,11 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     try {
         const username = req.body?.username?.trim()
-        const password = req.body?.password != null ? String(req.body.password) : ''
-        const orgName = req.body?.orgName ? String(req.body.orgName).trim() : null
+        const password =
+            req.body?.password != null ? String(req.body.password) : ''
+        const orgName = req.body?.orgName
+            ? String(req.body.orgName).trim()
+            : null
 
         if (!username || !password) {
             return res.status(400).json({
@@ -94,10 +102,9 @@ const register = async (req, res) => {
         if (!process.env.SECRET_PEPPER) {
             return res.status(500).json({
                 error: true,
-                message: 'Server configuration error',
+                message: 'WE ARE MISSING A PEPPER FOR PASSWORDS',
             })
         }
-
         const hash = await argon2.hash(password, {
             secret: Buffer.from(process.env.SECRET_PEPPER),
             type: argon2.argon2id,
@@ -112,7 +119,7 @@ const register = async (req, res) => {
         })
 
         if (org) {
-            await prisma.org_members.create({
+            await prisma.org_Members.create({
                 data: {
                     org_id: org.ID,
                     user_id: newUser.ID,

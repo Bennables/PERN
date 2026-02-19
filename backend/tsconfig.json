@@ -3,10 +3,9 @@
         "outDir": "./built",
         "allowJs": true,
         "target": "esnext",
-        "esModuleInterop":true,
+        "esModuleInterop": true,
         "moduleResolution": "nodenext",
         "module": "nodenext"
-        
     },
-    "include": ["../backend"]
+    "include": ["src"]
 }

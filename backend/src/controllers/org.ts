@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { getUserID } from '../helpers/helpers.js'
+import 'dotenv/config'
 
 const findOrg = async (req, res) => {
     try {

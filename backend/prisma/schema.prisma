@@ -7,7 +7,7 @@ datasource db {
 
 }
 
-model users {
+model Users {
   ID        Int            @id @default(autoincrement())
   username  String         @unique @db.VarChar(32)
   pwHashed  String         @db.VarChar(128)
@@ -16,31 +16,31 @@ model users {
   lvl       Int
   currXp    Int
 
-  ownedTasks tasks[]       @relation("OwnedTasks")
-  orgMembers org_members[]
-  ordering   ordering[]
+  ownedTasks Tasks[]       @relation("OwnedTasks")
+  orgMembers Org_Members[]
+  ordering   Ordering[]
   subTaskMemberships SubTaskMember[]
 }
 
-model org {
+model Org {
   ID        Int            @id @default(autoincrement())
   name      String         @unique @db.VarChar(32)
 
-  members   org_members[]
-  tasks     tasks[]
+  members   Org_Members[]
+  tasks     Tasks[]
 }
 
-model org_members {
+model Org_Members {
   org_id   Int
   user_id  Int
 
-  org      org   @relation(fields: [org_id], references: [ID], onDelete: Cascade)
-  user     users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+  org      Org   @relation(fields: [org_id], references: [ID], onDelete: Cascade)
+  user     Users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
 
   @@id([org_id, user_id])
 }
 
-model tasks {
+model Tasks {
   ID        Int       @id @default(autoincrement())
   owner_id  Int?
   org_id    Int?
@@ -49,29 +49,29 @@ model tasks {
   deadline  DateTime
   urgency   Int
 
-  owner     users?    @relation("OwnedTasks", fields: [owner_id], references: [ID])
-  org       org?      @relation(fields: [org_id], references: [ID])
-  subTask subTask[]
-  ordering  ordering[]
+  owner     Users?    @relation("OwnedTasks", fields: [owner_id], references: [ID])
+  org       Org?      @relation(fields: [org_id], references: [ID])
+  subTask   Sub_Task[]
+  ordering  Ordering[]
 }
 
-model subTask {
+model Sub_Task {
   ID          Int       @id @default(autoincrement())
   description String?
   task_id     Int
 
-  task        tasks     @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+  task        Tasks     @relation(fields: [task_id], references: [ID], onDelete: Cascade)
 
   // users on this subtask (via join table)
   members     SubTaskMember[]
 }
-model ordering {
+model Ordering {
   user_id Int
   task_id Int
   ind     Int
 
-  user    users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
-  task    tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
+  user    Users @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+  task    Tasks @relation(fields: [task_id], references: [ID], onDelete: Cascade)
   
 
 
@@ -79,7 +79,7 @@ model ordering {
 
 }
 
-model levels {
+model Levels {
   lvl   Int
   lvlXP Int
 
@@ -91,8 +91,8 @@ model SubTaskMember {
   subtask_id Int
   user_id    Int
 
-  subtask    subTask @relation(fields: [subtask_id], references: [ID], onDelete: Cascade)
-  user       users   @relation(fields: [user_id], references: [ID], onDelete: Cascade)
+  subtask    Sub_Task @relation(fields: [subtask_id], references: [ID], onDelete: Cascade)
+  user       Users   @relation(fields: [user_id], references: [ID], onDelete: Cascade)
 
   @@id([subtask_id, user_id])
 }
