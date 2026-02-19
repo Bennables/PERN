@@ -8,19 +8,19 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
-    build:
-      context: .
-    environment:
-      NODE_ENV: production
-      REDIS_URL: redis://redis:6379
-    ports:
-      - 3334:3333
-    depends_on:
-      - redis
+    server:
+        build:
+            context: .
+        environment:
+            NODE_ENV: production
+            REDIS_URL: redis://redis:6379
+        ports:
+            - 3333:3333
+        depends_on:
+            - redis
 
-  redis:
-    image: redis:7-alpine
+    redis:
+        image: redis:7-alpine
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to

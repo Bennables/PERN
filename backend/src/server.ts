@@ -14,7 +14,7 @@ dotenv.config()
 const app = express()
 const server = http.createServer(app)
 const io = new SocketIOServer(server, {
-    cors: { origin: 'http://localhost:5173', credentials: true },
+    cors: { origin: process.env.FRONTEND_URL, credentials: true },
 })
 
 io.on('connection', (socket) => {
@@ -25,22 +25,25 @@ io.on('connection', (socket) => {
         socket.join(room)
     })
 
-    socket.on('chat:message', (data: { convoId?: string | number; text: string }) => {
-        const convoId = data.convoId
-        const text = data.text ?? ''
-        const payload = {
-            text,
-            message: text,
-            conversationId: convoId,
-            createdAt: new Date().toISOString(),
-            senderSocketId: socket.id,
+    socket.on(
+        'chat:message',
+        (data: { convoId?: string | number; text: string }) => {
+            const convoId = data.convoId
+            const text = data.text ?? ''
+            const payload = {
+                text,
+                message: text,
+                conversationId: convoId,
+                createdAt: new Date().toISOString(),
+                senderSocketId: socket.id,
+            }
+            if (convoId != null) {
+                io.to(`convo:${convoId}`).emit('chat:message', payload)
+            } else {
+                socket.emit('chat:message', payload)
+            }
         }
-        if (convoId != null) {
-            io.to(`convo:${convoId}`).emit('chat:message', payload)
-        } else {
-            socket.emit('chat:message', payload)
-        }
-    })
+    )
 
     socket.on('disconnect', () => {
         console.log('Socket.IO client disconnected', socket.id)
@@ -50,7 +53,7 @@ io.on('connection', (socket) => {
 app.use(express.json())
 app.use(
     cors({
-        origin: 'http://localhost:5173',
+        origin: process.env.FRONTEND_URL,
         credentials: true,
     })
 )
@@ -59,6 +62,6 @@ app.use(authRoutes)
 app.use(orgRoutes)
 app.use(taskRoutes)
 
-server.listen(3333, () => {
+server.listen(process.env.SERVER_PORT, () => {
     console.log("We're connected \n http://localhost:3333")
 })

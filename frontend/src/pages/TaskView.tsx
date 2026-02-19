@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useEffect, useState, FormEvent } from 'react'
 import { useNavigate, useParams, Link } from 'react-router'
 import type { Subtask } from '../types'
-import Chatbox from '../components/chatbox'
+import Chatbox from '../components/Chatbox'
 
 interface TaskDetail {
     ID?: number
