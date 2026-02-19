@@ -70,7 +70,8 @@ const register = async (req, res) => {
         const orgName = req.body?.orgName
             ? String(req.body.orgName).trim()
             : null
-
+        console.log(orgName)
+        console.log('SLDFJ')
         if (!username || !password) {
             return res.status(400).json({
                 error: true,
@@ -81,14 +82,14 @@ const register = async (req, res) => {
         const existing = await prisma.users.findUnique({
             where: { username },
         })
-
+        console.log('we have the username')
         if (existing) {
             return res.status(400).json({
                 error: true,
                 message: 'This username already exists',
             })
         }
-
+        console.log('Registed)')
         let org = null
         if (orgName) {
             org = await prisma.org.findUnique({ where: { name: orgName } })
@@ -98,7 +99,7 @@ const register = async (req, res) => {
                     .json({ error: true, message: 'Organization not found' })
             }
         }
-
+        console.log(org)
         if (!process.env.SECRET_PEPPER) {
             return res.status(500).json({
                 error: true,
@@ -109,6 +110,7 @@ const register = async (req, res) => {
             secret: Buffer.from(process.env.SECRET_PEPPER),
             type: argon2.argon2id,
         })
+        console.log(hash)
         const newUser = await prisma.users.create({
             data: {
                 username,
@@ -117,14 +119,15 @@ const register = async (req, res) => {
                 currXp: 0,
             },
         })
-
+        console.log('JOINING THEM')
         if (org) {
-            await prisma.org_Members.create({
+            const data = await prisma.org_Members.create({
                 data: {
                     org_id: org.ID,
                     user_id: newUser.ID,
                 },
             })
+            console.log(data)
         }
 
         return res.status(201).json({ error: false, message: 'created' })
@@ -132,7 +135,7 @@ const register = async (req, res) => {
         console.error('Register error:', err)
         return res.status(500).json({
             error: true,
-            message: 'Registration failed',
+            message: 'Registration failed' + err,
         })
     }
 }

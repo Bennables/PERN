@@ -21,9 +21,9 @@ const Register = () => {
             const reply = await axios.post(`${link}/register`, {
                 username,
                 password,
-                orgName: orgName || undefined,
+                orgName: orgName || 1,
             })
-            if (!reply.data.error) nav('/login')
+            if (!reply) nav('/login')
         } catch (e: unknown) {
             const err = e as {
                 response?: { data?: { message?: string } }
