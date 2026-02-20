@@ -14,7 +14,7 @@ redisClient.on('ready', () => {
     console.log('redisClient is ready')
 })
 
-// Connect to Redis without blocking module export
+// Connect to Redis without blocking module export 
 redisClient.connect().catch((err) => {
     console.log('Failed to connect to Redis:', err)
 })
