@@ -2,10 +2,7 @@
     "compilerOptions": {
         "outDir": "./built",
         "allowJs": true,
-        "target": "esnext",
-        "esModuleInterop": true,
-        "moduleResolution": "nodenext",
-        "module": "nodenext"
+        "target": "es5"
     },
-    "include": ["src"]
+    "include": ["../backend"]
 }

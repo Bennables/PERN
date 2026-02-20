@@ -1,6 +1,5 @@
 import { prisma } from '../lib/prisma.js'
 import { getUserID } from '../helpers/helpers.js'
-import 'dotenv/config'
 
 const getTasks = async (req, res) => {
     const user = req.user
@@ -74,7 +73,7 @@ const getTaskById = async (req, res) => {
         if (task.owner_id === user_id) {
             hasAccess = true
         } else if (task.org_id) {
-            const orgMember = await prisma.org_Members.findUnique({
+            const orgMember = await prisma.org_members.findUnique({
                 where: {
                     org_id_user_id: {
                         org_id: task.org_id,
@@ -168,7 +167,7 @@ const getTeamTasks = async (req, res) => {
 
     const user_id = userRecord.ID
 
-    const org_member = await prisma.org_Members.findFirst({
+    const org_member = await prisma.org_members.findFirst({
         where: { user_id },
     })
 
@@ -212,7 +211,7 @@ const updateTeamTasks = async (req, res) => {
 
         const user_id = userRecord.ID
 
-        const org_member = await prisma.org_Members.findFirst({
+        const org_member = await prisma.org_members.findFirst({
             where: { user_id },
         })
 
@@ -281,21 +280,8 @@ const createTask = async (req, res) => {
         const deadline = req.body.deadline ? new Date(req.body.deadline) : null
         const urgency = parseInt(req.body.urgency, 10) || 1
 
-        // Calculate next multiple of 1000 for easier sorting
-        const getNextMultipleOf1000 = (currentMax: number): number => {
-            return Math.ceil((currentMax + 1) / 1000) * 1000
-        }
-
         if (scope == 'personal') {
             const user_id = await getUserID(req.user)
-
-            // Get max index for the user before creating the task
-            const lastOrdering = await prisma.ordering.findFirst({
-                where: { user_id },
-                orderBy: { ind: 'desc' },
-            })
-
-            const maxIndex = Number(lastOrdering?.ind ?? 0)
 
             const result = await prisma.tasks.create({
                 data: {
@@ -306,7 +292,7 @@ const createTask = async (req, res) => {
                     ordering: {
                         create: {
                             user_id,
-                            ind: getNextMultipleOf1000(maxIndex),
+                            ind: 0,
                         },
                     },
                 },
@@ -321,7 +307,7 @@ const createTask = async (req, res) => {
             const user_id = await getUserID(req.user)
 
             let org_id = null
-            const org_member = await prisma.org_Members.findFirst({
+            const org_member = await prisma.org_members.findFirst({
                 where: { user_id },
             })
 
@@ -335,7 +321,7 @@ const createTask = async (req, res) => {
                         .json({ error: true, message: 'Invalid org_id' })
                 }
 
-                await prisma.org_Members.upsert({
+                await prisma.org_members.upsert({
                     where: {
                         org_id_user_id: {
                             org_id,
@@ -355,13 +341,25 @@ const createTask = async (req, res) => {
                 })
             }
 
-            const orgUsers = await prisma.org_Members.findMany({
+            const result = await prisma.tasks.create({
+                data: {
+                    org_id,
+                    task_name: taskName,
+                    deadline,
+                    urgency,
+                    ordering: {
+                        create: {
+                            user_id,
+                            ind: 0,
+                        },
+                    },
+                },
+            })
+            const orgUsers = await prisma.org_members.findMany({
                 where: {
                     org_id: org_id,
                 },
             })
-            
-            // Get max index for each user before creating the task
             const lastByUser = await prisma.ordering.groupBy({
                 by: ['user_id'],
                 where: { user_id: { in: orgUsers.map((u) => u.user_id) } },
@@ -371,27 +369,13 @@ const createTask = async (req, res) => {
             const maxMap = new Map(
                 lastByUser.map((r) => [r.user_id, r._max.ind ?? 0])
             )
-
-            // Create the task first
-            const result = await prisma.tasks.create({
-                data: {
-                    org_id,
-                    task_name: taskName,
-                    deadline,
-                    urgency,
-                },
-            })
-
-            // Then create all orderings with indices that are multiples of 1000
-            await prisma.ordering.createMany({
-                data: orgUsers.map((user) => {
-                    const maxIndex = maxMap.get(user.user_id) ?? 0
-                    return {
-                        task_id: result.ID,
-                        user_id: user.user_id,
-                        ind: getNextMultipleOf1000(Number(maxIndex)),
-                    }
-                }),
+            const createMany = await prisma.ordering.createMany({
+                data: orgUsers.map((user) => ({
+                    task_id: result.ID,
+                    user_id: user.user_id,
+                    ind: (Number(maxMap.get(user.user_id)) ?? 0) + 1000,
+                })),
+                skipDuplicates: true,
             })
 
             res.status(201).json({
