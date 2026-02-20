@@ -1,6 +1,6 @@
 import { getUserID } from '../helpers/helpers.js'
 import { prisma } from '../lib/prisma.js'
-import 'dotenv/config'
+
 // Create a new subtask for a task
 const createSubtask = async (req, res) => {
     try {
@@ -53,7 +53,7 @@ const createSubtask = async (req, res) => {
         }
 
         // Create the subtask
-        const result = await prisma.sub_Task.create({
+        const result = await prisma.subTask.create({
             data: {
                 task_id: parseInt(task_id),
                 description: description || null,
@@ -96,7 +96,7 @@ const updateSubtask = async (req, res) => {
         }
 
         // Verify user has access to the task that owns this subtask
-        const subtask = await prisma.sub_Task.findUnique({
+        const subtask = await prisma.subTask.findUnique({
             where: { ID: parseInt(id) },
             include: {
                 task: {
@@ -131,7 +131,7 @@ const updateSubtask = async (req, res) => {
         }
 
         // Update the subtask
-        const result = await prisma.sub_Task.update({
+        const result = await prisma.subTask.update({
             where: { ID: parseInt(id) },
             data: { description: description || null },
         })
@@ -237,7 +237,7 @@ const deleteSubtask = async (req, res) => {
         }
 
         // Verify user has access to the task that owns this subtask
-        const subtask = await prisma.sub_Task.findUnique({
+        const subtask = await prisma.subTask.findUnique({
             where: { ID: parseInt(id) },
             include: {
                 task: {
@@ -272,7 +272,7 @@ const deleteSubtask = async (req, res) => {
         }
 
         // Delete the subtask
-        await prisma.sub_Task.delete({
+        await prisma.subTask.delete({
             where: { ID: parseInt(id) },
         })
 

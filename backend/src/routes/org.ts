@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { findOrg, createOrg } from '../controllers/org.js'
 import { verifyToken } from '../helpers/helpers.js'
-import 'dotenv/config'
 
 const router = Router()
 

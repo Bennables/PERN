@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import 'dotenv/config'
 import {
     getTasks,
     getTaskById,

@@ -1,8 +1,8 @@
 import 'dotenv/config'
 
-import * as redis from 'redis'
+import { createClient } from 'redis'
 
-const redisClient = redis.createClient({
+const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
 })
 console.log(process.env.REDIS_URL)
@@ -14,7 +14,7 @@ redisClient.on('ready', () => {
     console.log('redisClient is ready')
 })
 
-// Connect to Redis without blocking module export 
+// Connect to Redis without blocking module export
 redisClient.connect().catch((err) => {
     console.log('Failed to connect to Redis:', err)
 })

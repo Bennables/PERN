@@ -2,7 +2,6 @@ import jwt from 'jsonwebtoken'
 import { redisClient } from '../lib/redis.js'
 import { prisma } from '../lib/prisma.js'
 import { v4 as uuidv4 } from 'uuid'
-import 'dotenv/config'
 
 const createToken = async (user) => {
     console.log('running create token')
@@ -37,7 +36,7 @@ const getUserOrgID = async (user) => {
 
     if (!userRecord) return null
 
-    const org_member = await prisma.org_Members.findFirst({
+    const org_member = await prisma.org_members.findFirst({
         where: { user_id: userRecord.ID },
         select: { org_id: true },
     })
