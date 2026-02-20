@@ -1,19 +1,40 @@
-## Context
-
-<!-- Gives the reviewer some context about the work and why this change is being made, the WHY you are doing this. This field goes more into the product perspective. -->
+<!--- Provide a general summary of your changes in the Title above -->
 
 ## Description
 
-<!-- Provide a detailed description of how exactly this task will be accomplished. This can be something technical. What specific steps will be taken to achieve the goal? This should include details on service integration, job logic, implementation, etc. -->
+<!--- Describe your changes in detail -->
 
-## Changes in the codebase
+## Related Issue
 
-<!-- This is where becomes technical. Here is where you can be more focused on the engineering side of your solution. Include information about the functionality they are adding or modifying, as well as any refactoring or improvement of existing code. -->
+<!--- This project only accepts pull requests related to open issues -->
+<!--- If suggesting a new feature or change, please discuss it in an issue first -->
+<!--- If fixing a bug, there should be an issue describing it with steps to reproduce -->
+<!--- Please link to the issue here: -->
 
-## Changes outside the codebase
+## Motivation and Context
 
-<!-- If you have made changes to external services, need to add additional values to the job settings, or need to add something new to the database, explain it here. This may include updates to third-party services, changes to infrastructure configuration, integration with external APIs, etc. -->
+<!--- Why is this change required? What problem does it solve? -->
 
-## Aditional information
+## How Has This Been Tested?
 
-<!-- Provide any additional information that might be useful to the reviewer in evaluating this pull request. This could include performance considerations,design choices, etc. -->
+<!--- Please describe in detail how you tested your changes. -->
+<!--- Include details of your testing environment, and the tests you ran to -->
+<!--- see how your change affects other areas of the code, etc. -->
+
+## Screenshots (if appropriate):
+
+## Types of changes
+
+<!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to change)
+
+## Checklist:
+
+<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
+
+- [ ] My code involves a change to the database schema.
+- [ ] My code requires a change to the documentation.
