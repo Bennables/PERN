@@ -2,14 +2,14 @@ FROM node:22
 
 WORKDIR /app
 
-COPY package*.json ./
+ARG VITE_LINK=http://localhost:3333
+ENV VITE_LINK=$VITE_LINK
 
+COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-ENV PORT=9005
-
-EXPOSE 9005
+EXPOSE 5173
 
 CMD ["npm", "run", "dev"]
