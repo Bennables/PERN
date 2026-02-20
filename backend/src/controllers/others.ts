@@ -1,5 +1,6 @@
 import { refreshTokens } from '../helpers/helpers.js'
 import { prisma } from '../lib/prisma.js'
+import 'dotenv/config'
 
 const connect = async (req, res) => {
     res.send("WE'RE CONNECTED")
@@ -124,7 +125,7 @@ const updateTeamTasks = async (req, res) => {
         }
         const user_id = userRecord.ID
 
-        const orgMember = await prisma.org_members.findFirst({
+        const orgMember = await prisma.org_Members.findFirst({
             where: { user_id },
             select: { org_id: true },
         })
