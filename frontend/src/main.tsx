@@ -11,7 +11,7 @@ import Create from './pages/Create.js'
 import OrgCreate from './pages/OrgCreate.js'
 import OrgFind from './pages/OrgFind.js'
 import TaskView from './pages/TaskView.js'
-import Chatbox from './components/Chatbox.js'
+import Chatbox from './components/d.js'
 
 const router = createBrowserRouter([
     { path: '/', element: <OrgFind /> },
