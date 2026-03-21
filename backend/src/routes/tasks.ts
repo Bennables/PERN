@@ -14,6 +14,7 @@ import {
     getSubtasks,
     deleteSubtask,
 } from '../controllers/subtasks.js'
+import { addMessage, getChatHistory } from '../controllers/chat.js'
 import { verifyToken } from '../helpers/helpers.js'
 
 const router = Router()
@@ -29,6 +30,10 @@ router.get('/team', getTeamTasks)
 router.put('/team/tasks', updateTeamTasks)
 
 router.post('/create', createTask)
+
+// Chat routes
+router.post('/tasks/:task_id/chat', addMessage)
+router.get('/tasks/:task_id/chat', getChatHistory)
 
 // Subtask routes
 router.post('/subtasks', createSubtask)
