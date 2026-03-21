@@ -21,6 +21,11 @@ const addMessage = async (req, res) => {
             return res.status(404).json({ error: true, message: 'Task not found' })
         }
 
+        const userRecord = await prisma.users.findUnique({
+            where: { username: req.user },
+            select: { ID: true },
+        })
+
         const chat = await prisma.chat.upsert({
             where: { task_id: taskId },
             update: {},
@@ -30,6 +35,7 @@ const addMessage = async (req, res) => {
         const chatMessage = await prisma.chat_Message.create({
             data: {
                 chat_id: chat.ID,
+                sender_id: userRecord?.ID ?? null,
                 role,
                 content: message,
             },
