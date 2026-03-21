@@ -37,13 +37,14 @@ const Register = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #cefad0 100%)' }}>
             <div className="max-w-md w-full space-y-8">
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     <div className="text-center mb-8">
-                        <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                        <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#cefad0' }}>
                             <svg
-                                className="h-6 w-6 text-emerald-600"
+                                className="h-6 w-6"
+                                style={{ color: '#3a8c1a' }}
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -63,7 +64,7 @@ const Register = () => {
                             Join us today and get started
                         </p>
                         {orgName && (
-                            <p className="text-sm text-emerald-600 mt-2 font-medium">
+                            <p className="text-sm mt-2 font-medium" style={{ color: '#3a8c1a' }}>
                                 Joining: {orgName}
                             </p>
                         )}
@@ -83,7 +84,7 @@ const Register = () => {
                                 value={username ?? ''}
                                 placeholder="Choose a username"
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cefad0] focus:border-[#5cb82e] transition-colors duration-200 bg-gray-50 focus:bg-white"
                             />
                         </div>
                         <div>
@@ -100,12 +101,15 @@ const Register = () => {
                                 value={password ?? ''}
                                 placeholder="Create a secure password"
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cefad0] focus:border-[#5cb82e] transition-colors duration-200 bg-gray-50 focus:bg-white"
                             />
                         </div>
                         <button
                             type="submit"
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-lg"
+                            className="w-full text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#cefad0] focus:ring-offset-2 shadow-lg"
+                            style={{ backgroundColor: '#5cb82e' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#4a9e22')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#5cb82e')}
                         >
                             Create Account
                         </button>
@@ -115,7 +119,10 @@ const Register = () => {
                             Already have an account?{' '}
                             <Link
                                 to="/login"
-                                className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors duration-200"
+                                className="font-medium transition-colors duration-200"
+                                style={{ color: '#3a9c10' }}
+                                onMouseEnter={e => (e.currentTarget.style.color = '#2d7a0c')}
+                                onMouseLeave={e => (e.currentTarget.style.color = '#3a9c10')}
                             >
                                 Sign in here
                             </Link>
