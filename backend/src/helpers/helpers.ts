@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken'
 import { redisClient } from '../lib/redis.js'
 import { prisma } from '../lib/prisma.js'
-import { v4 as uuidv4 } from 'uuid'
 import 'dotenv/config'
 
 const createToken = async (user) => {
-    console.log('running create token')
+    console.log(`[createToken] Creating tokens for user: ${user}`)
     const token = jwt.sign({ user: user }, process.env.JWT_SECRET_KEY, {
         expiresIn: '30s',
     })
@@ -15,8 +14,8 @@ const createToken = async (user) => {
         { expiresIn: '7d' }
     )
 
-    // console.log("The JWT is: " + token)
     await redisClient.SADD('refreshTokens', refreshToken)
+    console.log(`[createToken] Tokens created and refresh token stored in Redis for user: ${user}`)
 
     return [token, refreshToken]
 }
@@ -46,56 +45,58 @@ const getUserOrgID = async (user) => {
 }
 
 const verifyToken = async (req, res, next) => {
-    // console.log(req.headers);
     try {
-        console.log('verifying token')
-
-        const token = req.headers['authorization'].split(' ')[1]
-        if (!token) {
-            console.log('THERE"S NO TOKEN')
+        const authHeader = req.headers['authorization']
+        if (!authHeader) {
+            console.log('[verifyToken] No authorization header present')
+            return res.status(401).send({ message: 'no token provided' })
         }
+
+        const token = authHeader.split(' ')[1]
+        if (!token) {
+            console.log('[verifyToken] Authorization header malformed')
+            return res.status(401).send({ message: 'no token provided' })
+        }
+
+        console.log('[verifyToken] Verifying access token...')
         const jwtVerified = jwt.verify(token, process.env.JWT_SECRET_KEY)
-        /* the format of jwtverified is a json
-        {
-            user: 'ben',
-            jwtid: 'd6b114fc-6e45-4ebd-bd53-7ccb85ff9493',
-            iat: 1755888544,
-            exp: 1755892144
-        } 
-        */
 
         req.user = jwtVerified.user
-
-        // console.log(jwtVerified);
-        // console.log(jwtVerified.user);
+        console.log(`[verifyToken] Token valid for user: ${req.user}`)
         next()
     } catch (e) {
-        //this should get you a new refreshtoken. Done in the front end.
-        if (e.name == 'TokenExpiredError') {
-            // console.log(e);
+        if (e.name === 'TokenExpiredError') {
+            console.log('[verifyToken] Token expired — client should refresh')
             return res.status(401).send({ message: 'token expired' })
         }
-        // console.log(e)
-
-        //this should redirect to login
-
-        console.log(e.name + ' ' + e.message)
-        // console.log(e)
+        console.log(`[verifyToken] Invalid token — ${e.name}: ${e.message}`)
         return res.status(400).send({ message: 'bad token' })
     }
 }
 
 const refreshTokens = async (refreshToken) => {
-    const verifiedRefresh = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_SECRET_KEY
-    )
-    if (await redisClient.sIsMember('refreshTokens', refreshToken)) {
+    try {
+        console.log('[refreshTokens] Verifying refresh token...')
+        const verifiedRefresh = jwt.verify(
+            refreshToken,
+            process.env.REFRESH_SECRET_KEY
+        )
+
+        const isValid = await redisClient.sIsMember('refreshTokens', refreshToken)
+        console.log(`[refreshTokens] Token in Redis: ${isValid}`)
+
+        if (!isValid) {
+            console.log('[refreshTokens] Refresh token not found in Redis — possible reuse or logout')
+            return null
+        }
+
         await redisClient.sRem('refreshTokens', refreshToken)
+        console.log(`[refreshTokens] Old refresh token removed, issuing new tokens for user: ${verifiedRefresh.user}`)
+
         const newTokens = await createToken(verifiedRefresh.user)
-        console.log('newtokesn ' + newTokens[1])
         return newTokens
-    } else {
+    } catch (e) {
+        console.log(`[refreshTokens] Failed to verify refresh token — ${e.name}: ${e.message}`)
         return null
     }
 }
