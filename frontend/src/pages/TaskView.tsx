@@ -337,7 +337,13 @@ const TaskView = () => {
                     <Chatbox taskId={id} />
                 </div>
                 <div className="h-64 flex-shrink-0 p-4 border-t border-slate-200">
-                    <GenerateChatbar taskId={id} link={link} />
+                    <GenerateChatbar
+                        taskId={id}
+                        link={link}
+                        onGenerated={(newSubtasks) =>
+                            setSubtasks((prev) => [...prev, ...newSubtasks])
+                        }
+                    />
                 </div>
             </div>
         </div>

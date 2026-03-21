@@ -1,6 +1,9 @@
-import { refreshTokens } from '../helpers/helpers.js'
+import OpenAI from 'openai'
+import { refreshTokens, getUserID } from '../helpers/helpers.js'
 import { prisma } from '../lib/prisma.js'
 import 'dotenv/config'
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const connect = async (req, res) => {
     res.send("WE'RE CONNECTED")
@@ -178,6 +181,96 @@ const updateTeamTasks = async (req, res) => {
     }
 }
 
+const generateTasks = async (req, res) => {
+    try {
+        const { task_id, prompt } = req.body
+
+        if (!prompt?.trim()) {
+            return res.status(400).json({ message: 'prompt is required' })
+        }
+        if (!task_id) {
+            return res.status(400).json({ message: 'task_id is required' })
+        }
+
+        const user_id = await getUserID(req.user)
+        if (!user_id) {
+            return res.status(404).json({ message: 'User not found' })
+        }
+
+        const task = await prisma.tasks.findUnique({
+            where: { ID: Number(task_id) },
+            include: {
+                subTask: true,
+                org: { include: { members: { where: { user_id } } } },
+            },
+        })
+
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' })
+        }
+
+        const hasAccess =
+            task.owner_id === user_id ||
+            (task.org && task.org.members.length > 0)
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Access denied' })
+        }
+
+        const taskContext = `Task: "${task.task_name}"${task.description ? `\nDescription: ${task.description}` : ''}${task.subTask?.length ? `\nExisting subtasks: ${task.subTask.map((s) => s.description).join(', ')}` : ''}\n`
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            max_tokens: 1024,
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a task management assistant. When asked to generate tasks or subtasks, respond with a JSON array of objects with "task_name" and optionally "description" fields. Respond ONLY with the JSON array, no other text.`,
+                },
+                {
+                    role: 'user',
+                    content: `${taskContext}${prompt}`,
+                },
+            ],
+        })
+
+        const text = completion.choices[0]?.message?.content ?? ''
+
+        let generated: { task_name: string; description?: string }[] = []
+        try {
+            const cleaned = text
+                .replace(/^```(?:json)?\n?/, '')
+                .replace(/\n?```$/, '')
+            generated = JSON.parse(cleaned)
+        } catch {
+            return res.status(200).json({ message: text, tasks: [] })
+        }
+
+        console.log(generated)
+
+        const subtasks = await prisma.$transaction(
+            generated.map((t) =>
+                prisma.sub_Task.create({
+                    data: {
+                        task_id: Number(task_id),
+                        description: t.description
+                            ? `${t.task_name}: ${t.description}`
+                            : t.task_name,
+                    },
+                })
+            )
+        )
+
+        res.status(200).json({ message: 'success', tasks: generated, subtasks })
+    } catch (e) {
+        console.error('Error generating tasks:', e)
+        res.status(500).json({
+            message: 'Failed to generate tasks',
+            error: (e as Error).message,
+        })
+    }
+}
+
 export {
     connect,
     getTasks,
@@ -185,4 +278,5 @@ export {
     new_refresh,
     updateTasks,
     updateTeamTasks,
+    generateTasks,
 }

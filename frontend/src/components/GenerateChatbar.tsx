@@ -6,12 +6,15 @@ interface GeneratedTask {
     description?: string
 }
 
+import type { Subtask } from '../types.js'
+
 interface GenerateChatbarProps {
     taskId?: string
     link: string
+    onGenerated?: (subtasks: Subtask[]) => void
 }
 
-export default function GenerateChatbar({ taskId, link }: GenerateChatbarProps) {
+export default function GenerateChatbar({ taskId, link, onGenerated }: GenerateChatbarProps) {
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
     const [loading, setLoading] = useState(false)
@@ -45,6 +48,9 @@ export default function GenerateChatbar({ taskId, link }: GenerateChatbarProps) 
                 responseText = (data.tasks as GeneratedTask[])
                     .map((t, i) => `${i + 1}. **${t.task_name}**${t.description ? `\n   ${t.description}` : ''}`)
                     .join('\n')
+                if (Array.isArray(data.subtasks) && data.subtasks.length > 0) {
+                    onGenerated?.(data.subtasks)
+                }
             } else if (typeof data.message === 'string') {
                 responseText = data.message
             } else {

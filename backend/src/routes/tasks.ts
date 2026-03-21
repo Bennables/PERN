@@ -8,6 +8,7 @@ import {
     updateTeamTasks,
     createTask,
 } from '../controllers/tasks.js'
+import { generateTasks } from '../controllers/others.js'
 import {
     createSubtask,
     updateSubtask,
@@ -29,6 +30,8 @@ router.get('/team', getTeamTasks)
 router.put('/team/tasks', updateTeamTasks)
 
 router.post('/create', createTask)
+
+router.post('/generate-tasks', generateTasks)
 
 // Subtask routes
 router.post('/subtasks', createSubtask)
