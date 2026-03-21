@@ -3,6 +3,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { useNavigate, useParams, Link } from 'react-router'
 import type { Subtask } from '../types'
 import Chatbox from '../components/Chatbox'
+import GenerateChatbar from '../components/GenerateChatbar.js'
 
 interface TaskDetail {
     ID?: number
@@ -334,6 +335,9 @@ const TaskView = () => {
             <div className="w-1/2 fixed right-0 top-0 h-screen flex flex-col bg-white border-l border-slate-200">
                 <div className="flex-1 min-h-0 p-4">
                     <Chatbox taskId={id} />
+                </div>
+                <div className="h-64 flex-shrink-0 p-4 border-t border-slate-200">
+                    <GenerateChatbar taskId={id} link={link} />
                 </div>
             </div>
         </div>
