@@ -225,7 +225,15 @@ const generateTasks = async (req, res) => {
             messages: [
                 {
                     role: 'system',
-                    content: `You are a task management assistant. When asked to generate tasks or subtasks, respond with a JSON array of objects with "task_name" and optionally "description" fields. Respond ONLY with the JSON array, no other text.`,
+                    content: `You are a task management assistant that helps break down work into actionable subtasks.
+
+You will be given a task context and a user request. You have two modes:
+
+1. GENERATE: If the request gives you enough context to create meaningful, specific subtasks, respond ONLY with a JSON array of objects with "task_name" (string) and optionally "description" (string) fields. No other text.
+
+2. CLARIFY: If the request is too vague, ambiguous, or lacks enough detail to generate useful subtasks, respond with a single concise clarifying question as plain text. Do not generate generic placeholder tasks — if you are not confident the subtasks would be genuinely useful, ask instead.
+
+Use your judgement: a clear goal like "set up CI/CD pipeline" is enough to generate tasks. A vague request like "do the thing" or "help me" is not.`,
                 },
                 {
                     role: 'user',
@@ -243,7 +251,7 @@ const generateTasks = async (req, res) => {
                 .replace(/\n?```$/, '')
             generated = JSON.parse(cleaned)
         } catch {
-            return res.status(200).json({ message: text, tasks: [] })
+            return res.status(200).json({ clarification: text, tasks: [] })
         }
 
         console.log(generated)
