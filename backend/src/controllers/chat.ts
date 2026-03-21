@@ -43,7 +43,7 @@ const addMessage = async (req, res) => {
 
         // Push to front of Redis list, trim oldest off the back
         const cacheKey = `chat:${taskId}`
-        const entry = JSON.stringify({ role, content: message, createdAt: chatMessage.createdAt })
+        const entry = JSON.stringify({ role, content: message, createdAt: chatMessage.createdAt, sender_username: req.user })
         await redisClient.lPush(cacheKey, entry)
 
         const listLen = await redisClient.lLen(cacheKey)
@@ -81,6 +81,7 @@ const getChatHistory = async (req, res) => {
                 messages: {
                     orderBy: { createdAt: 'desc' },
                     take: CACHE_LIMIT,
+                    include: { sender: { select: { username: true } } },
                 },
             },
         })
@@ -91,7 +92,7 @@ const getChatHistory = async (req, res) => {
 
         if (chat.messages.length > 0) {
             const entries = chat.messages.map((m) =>
-                JSON.stringify({ role: m.role, content: m.content, createdAt: m.createdAt })
+                JSON.stringify({ role: m.role, content: m.content, createdAt: m.createdAt, sender_username: m.sender?.username ?? null })
             )
             await redisClient.rPush(cacheKey, entries)
         }
@@ -100,6 +101,7 @@ const getChatHistory = async (req, res) => {
             role: m.role,
             content: m.content,
             createdAt: m.createdAt,
+            sender_username: m.sender?.username ?? null,
         }))
 
         res.status(200).json({ error: false, source: 'db', messages })

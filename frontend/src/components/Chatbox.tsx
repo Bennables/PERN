@@ -1,8 +1,9 @@
+import axios from 'axios'
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router'
 import { io, Socket } from 'socket.io-client'
 
 const SOCKET_URL = 'http://127.0.0.1:3333'
+const API = import.meta.env.VITE_LINK
 
 export interface ChatMessage {
     id: string
@@ -22,6 +23,41 @@ export default function Chatbox(props: any) {
         'connected' | 'connecting' | 'disconnected'
     >('disconnected')
     const convoId = props.taskId
+
+    const currentUser = (() => {
+        try {
+            const token = sessionStorage.getItem('accessToken')
+            if (!token) return null
+            return JSON.parse(atob(token.split('.')[1])).user as string
+        } catch {
+            return null
+        }
+    })()
+
+    useEffect(() => {
+        if (!convoId) return
+        const token = sessionStorage.getItem('accessToken')
+        axios
+            .get(`${API}/tasks/${convoId}/chat`, {
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true,
+            })
+            .then((res) => {
+                const history = [...(res.data.messages ?? [])].reverse()
+                setMessages(
+                    history.map(
+                        (m: { role: string; content: string; createdAt: string; sender_username: string | null }, i: number) => ({
+                            id: `history-${i}`,
+                            text: m.content,
+                            isOwn: m.sender_username === currentUser,
+                            senderName: m.sender_username ?? undefined,
+                            createdAt: m.createdAt,
+                        })
+                    )
+                )
+            })
+            .catch(() => {})
+    }, [convoId])
 
     useEffect(() => {
         setConnectionStatus('connecting')
@@ -100,6 +136,20 @@ export default function Chatbox(props: any) {
             },
         ])
         setInput('')
+
+        if (convoId) {
+            const token = sessionStorage.getItem('accessToken')
+            axios
+                .post(
+                    `${API}/tasks/${convoId}/chat`,
+                    { message: trimmed, role: 'user' },
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                        withCredentials: true,
+                    }
+                )
+                .catch((e) => console.error('Failed to persist message:', e))
+        }
     }
 
     return (
