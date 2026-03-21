@@ -4,7 +4,7 @@
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #cefad0 100%);
 }
 
 .create-card {
@@ -51,8 +51,8 @@
 .form-group input[type="text"]:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #5cb82e;
+    box-shadow: 0 0 0 3px rgba(206, 250, 208, 0.6);
 }
 
 .form-row {
@@ -74,7 +74,7 @@
 .submit-button {
     width: 100%;
     padding: 14px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #5cb82e 0%, #4a9e22 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -89,7 +89,7 @@
 
 .submit-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 24px rgba(92, 184, 46, 0.4);
 }
 
 .submit-button:active {
@@ -124,9 +124,9 @@
 }
 
 .scope-option input[type="radio"]:checked + label {
-    border-color: #667eea;
-    background-color: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+    border-color: #5cb82e;
+    background-color: rgba(206, 250, 208, 0.5);
+    color: #3a8c1a;
     font-weight: 700;
 }
 
@@ -140,7 +140,7 @@
 .date-section label {
     display: block;
     margin-bottom: 16px;
-    color: #667eea;
+    color: #3a8c1a;
     font-weight: 700;
     font-size: 16px;
 }

@@ -48,12 +48,12 @@ const OrgCreate = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-slate-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #cefad0 100%)' }}>
       <div className="max-w-md w-full space-y-8">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-              <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#cefad0' }}>
+              <svg className="h-6 w-6" style={{ color: '#3a8c1a' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7l9-4 9 4m-9 4l9-4m-9 4v10M4 10v10m16-10v10" />
               </svg>
             </div>
@@ -71,7 +71,7 @@ const OrgCreate = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Product Squad Alpha"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cefad0] focus:border-[#5cb82e] transition-colors duration-200 bg-gray-50 focus:bg-white"
               />
             </div>
             {error && (
@@ -82,7 +82,10 @@ const OrgCreate = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 shadow-lg"
+              className="w-full disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#cefad0] focus:ring-offset-2 shadow-lg"
+              style={{ backgroundColor: '#5cb82e' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#4a9e22' }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#5cb82e' }}
             >
               {loading ? 'Creating...' : 'Create organization'}
             </button>
@@ -90,7 +93,7 @@ const OrgCreate = () => {
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-gray-600">
               Already in a team?{' '}
-              <Link to="/team" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+              <Link to="/team" className="font-medium transition-colors duration-200" style={{ color: '#3a9c10' }} onMouseEnter={e => (e.currentTarget.style.color = '#2d7a0c')} onMouseLeave={e => (e.currentTarget.style.color = '#3a9c10')}>
                 View team board
               </Link>
             </p>

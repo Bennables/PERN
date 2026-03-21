@@ -288,8 +288,8 @@ const DragContext = ({ dest, compact }: DragContextProps) => {
       )}
       <div className={compact ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-w-0">
               <div className="bg-green-50 border-b border-green-100 px-4 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -306,7 +306,7 @@ const DragContext = ({ dest, compact }: DragContextProps) => {
                 <Drag id="droppable" state={state.low ?? []} urgencyColor="green" />
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-w-0">
               <div className="bg-orange-50 border-b border-orange-100 px-4 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -323,7 +323,7 @@ const DragContext = ({ dest, compact }: DragContextProps) => {
                 <Drag id="droppable2" state={state.high ?? []} urgencyColor="orange" />
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-w-0">
               <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">

@@ -149,7 +149,7 @@ const TaskView = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #e6fce8 100%)' }}>
                 <div className="text-slate-600">Loading task...</div>
             </div>
         )
@@ -157,14 +157,14 @@ const TaskView = () => {
 
     if (error || !task) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #e6fce8 100%)' }}>
                 <div className="text-center">
                     <p className="text-red-600 mb-4">
                         {error ?? 'Task not found'}
                     </p>
                     <Link
                         to="/personal"
-                        className="text-indigo-600 hover:text-indigo-700"
+                        className="transition-colors duration-200" style={{ color: '#3a9c10' }} onMouseEnter={e => (e.currentTarget.style.color = '#2d7a0c')} onMouseLeave={e => (e.currentTarget.style.color = '#3a9c10')}
                     >
                         ← Back to tasks
                     </Link>
@@ -174,13 +174,13 @@ const TaskView = () => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-row">
+        <div className="min-h-screen flex flex-row" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #e6fce8 100%)' }}>
             <div className="w-1/2 fixed left-0 top-0 h-screen overflow-y-auto bg-white border-r border-slate-200">
                 <div className="p-8">
                     <div className="mb-6">
                         <Link
                             to="/personal"
-                            className="text-sm text-indigo-600 hover:text-indigo-700 mb-4 inline-block"
+                            className="text-sm mb-4 inline-block transition-colors duration-200" style={{ color: '#3a9c10' }} onMouseEnter={e => (e.currentTarget.style.color = '#2d7a0c')} onMouseLeave={e => (e.currentTarget.style.color = '#3a9c10')}
                         >
                             ← Back to tasks
                         </Link>
@@ -230,11 +230,11 @@ const TaskView = () => {
                                         setNewSubtask(e.target.value)
                                     }
                                     placeholder="Add a subtask..."
-                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cefad0]"
                                 />
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                                    className="px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200" style={{ backgroundColor: '#5cb82e' }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#4a9e22')} onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#5cb82e')}
                                 >
                                     Add
                                 </button>
@@ -271,7 +271,7 @@ const TaskView = () => {
                                                             subtask.ID
                                                         )
                                                     }
-                                                    className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+                                                    className="px-3 py-1 text-white rounded text-sm transition-colors duration-200" style={{ backgroundColor: '#5cb82e' }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#4a9e22')} onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#5cb82e')}
                                                 >
                                                     Save
                                                 </button>
@@ -306,7 +306,7 @@ const TaskView = () => {
                                                                     ''
                                                             )
                                                         }}
-                                                        className="text-indigo-600 hover:text-indigo-700 text-sm"
+                                                        className="text-sm transition-colors duration-200" style={{ color: '#3a9c10' }} onMouseEnter={e => (e.currentTarget.style.color = '#2d7a0c')} onMouseLeave={e => (e.currentTarget.style.color = '#3a9c10')}
                                                     >
                                                         Edit
                                                     </button>
